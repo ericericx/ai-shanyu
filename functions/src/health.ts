@@ -7,7 +7,6 @@
 
 import { onRequest } from "firebase-functions/v2/https";
 import { logger } from "firebase-functions/v2";
-import { Request, Response } from "express";
 
 /**
  * GET /healthCheck
@@ -16,7 +15,7 @@ import { Request, Response } from "express";
  */
 export const healthCheck = onRequest(
   { region: "asia-east1" },
-  (req: Request, res: Response) => {
+  (req, res) => {
     // 只允許 GET 請求
     if (req.method !== "GET") {
       res.status(405).json({ error: "Method Not Allowed" });
