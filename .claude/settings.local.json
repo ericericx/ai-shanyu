@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(find /Users/eric.chien/Desktop/MyProject/ai-shanyu -type f \\\\\\(-name *.dart -o -name *.py -o -name *.java -o -name *.kt -o -name *.swift \\\\\\))",
+      "Bash(firebase:*)",
+      "Bash(flutter --version)",
+      "Bash(npm --version)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(flutter create:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(dart pub:*)",
+      "Bash(flutterfire configure:*)",
+      "Bash(flutter pub:*)",
+      "Bash(flutter build:*)"
+    ]
+  }
+}

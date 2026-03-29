@@ -1,0 +1,1 @@
+- [山裕電商系統 v1 專案基礎資訊](project_shanyu_ecommerce.md) — Firebase 專案 ID、T-01 完成狀態、Functions v2 API 注意事項

@@ -1,0 +1,1 @@
+- [山裕電商系統 v1](project_shanyu_ecommerce.md) — Firebase 全棧農產品電商，OpenSpec 已立項，24 個任務分配給 flutter-artisan 與 firebase-integrator
