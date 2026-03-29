@@ -3,13 +3,176 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ============================================================
-    // 開發環境暫用寬鬆規則
-    // 警告：此規則僅適用於 development 階段
-    // 正式安全規則請參考 design.md Section 3.2
-    // 部署到 production 前必須由 firebase-integrator 執行 T-03 替換
+    // 輔助函數
     // ============================================================
-    match /{document=**} {
-      allow read, write: if true;
+
+    // 確認請求已通過 Firebase Authentication 認證
+    function isAuthenticated() {
+      return request.auth != null;
     }
+
+    // 確認使用者具備 admin Custom Claim
+    // 由 Firebase Admin SDK 透過 setCustomUserClaims 設定
+    function isAdmin() {
+      return isAuthenticated() &&
+             request.auth.token.admin == true;
+    }
+
+    // 確認請求者為指定使用者本人
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ============================================================
+    // users/{userId}
+    // 使用者個人資料：僅本人或管理員可存取
+    // ============================================================
+    match /users/{userId} {
+      // 本人可讀取自己的資料；管理員可讀取任何使用者資料
+      allow read: if isOwner(userId) || isAdmin();
+
+      // 只有本人可建立自己的文件（避免任意建立他人資料）
+      allow create: if isOwner(userId);
+
+      // 本人可更新自己的資料；管理員可修改（例如停用帳號）
+      allow update: if isOwner(userId) || isAdmin();
+
+      // 刪除只允許管理員（避免使用者自行刪除帳號資料造成孤立訂單）
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================
+    // products/{productId}
+    // 商品資料：公開可讀（無論登入狀態）；寫入僅限管理員
+    // ============================================================
+    match /products/{productId} {
+      // 未登入與登入使用者皆可讀取商品（前台公開展示需求）
+      allow read: if true;
+
+      // 商品建立、修改、刪除僅限管理員
+      allow write: if isAdmin();
+
+      // variants 子集合：與商品同樣規則
+      match /variants/{variantId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
+    // ============================================================
+    // categories/{categoryId}
+    // 分類資料：公開可讀；寫入僅限管理員
+    // ============================================================
+    match /categories/{categoryId} {
+      // 未登入與登入使用者皆可讀取分類
+      allow read: if true;
+
+      // 分類建立、修改、刪除僅限管理員
+      allow write: if isAdmin();
+    }
+
+    // ============================================================
+    // orders/{orderId}
+    // 訂單資料：本人可讀；建立需為已認證使用者；修改僅限管理員
+    // ============================================================
+    match /orders/{orderId} {
+      // 只有訂單的 userId 欄位對應的本人可讀取，或管理員
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+
+      // 已認證使用者可建立訂單，但 userId 欄位必須等於自身 uid
+      // 防止偽造他人訂單
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+
+      // 訂單狀態修改（出貨、完成、取消）僅限管理員
+      // 使用者不得自行修改訂單內容
+      allow update: if isAdmin();
+
+      // 訂單不允許實體刪除（稽核需求）
+      allow delete: if false;
+    }
+
+    // ============================================================
+    // carts/{userId}
+    // 購物車：以 userId 作為文件 ID，僅本人可讀寫
+    // ============================================================
+    match /carts/{userId} {
+      // 購物車嚴格綁定使用者身份，不開放管理員代讀（隱私考量）
+      allow read, write: if isOwner(userId);
+    }
+
+    // ============================================================
+    // cms/{docId}
+    // CMS 設定（banner、brand story 等）：任何人皆可讀；寫入僅限管理員
+    // ============================================================
+    match /cms/{docId} {
+      // 前台公開展示內容，無登入限制
+      allow read: if true;
+
+      // CMS 內容管理僅限管理員
+      allow write: if isAdmin();
+    }
+
+    // ============================================================
+    // productViews/{viewId}
+    // 商品瀏覽記錄（CRM 用）：任何人可建立；讀取與修改僅限管理員
+    // ============================================================
+    match /productViews/{viewId} {
+      // 允許未登入使用者建立瀏覽記錄（匿名追蹤需求）
+      // 注意：僅限 create，不允許 update 或 delete（防篡改）
+      allow create: if true;
+
+      // 瀏覽記錄查詢屬 CRM 後台功能，僅管理員可讀
+      allow read: if isAdmin();
+
+      // 瀏覽記錄建立後不可修改（數據完整性）
+      allow update, delete: if false;
+    }
+
+    // ============================================================
+    // chats/{chatId}
+    // 客服對話：本人可讀寫自己的 chat；管理員可讀寫所有
+    // chatId 設計為與 userId 相同（一個使用者一個 chat 文件）
+    // ============================================================
+    match /chats/{chatId} {
+      // chatId == userId 的設計讓 isOwner 直接比對文件 ID
+      allow read: if isOwner(chatId) || isAdmin();
+
+      // 使用者建立 chat 時，必須確認 userId 欄位為自身 uid
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       chatId == request.auth.uid;
+
+      // 使用者可更新自己的 chat（例如標記已讀）；管理員可更新所有
+      allow update: if isOwner(chatId) || isAdmin();
+
+      // Chat 文件不允許刪除（保留客服歷史）
+      allow delete: if false;
+
+      // messages 子集合
+      match /messages/{messageId} {
+        // 只有 chat 文件的擁有者或管理員可讀取訊息
+        allow read: if isOwner(chatId) || isAdmin();
+
+        // 已認證使用者可新增訊息（使用者與管理員客服人員皆需要）
+        // 透過 chatId == request.auth.uid 確保只能在自己的 chat 新增
+        // 管理員可在任何 chat 新增（客服回覆）
+        allow create: if (isAuthenticated() && chatId == request.auth.uid) ||
+                         isAdmin();
+
+        // 訊息不允許修改或刪除（對話完整性）
+        allow update, delete: if false;
+      }
+    }
+
+    // ============================================================
+    // adminSettings/{docId}
+    // 後台設定：僅管理員可讀寫
+    // ============================================================
+    match /adminSettings/{docId} {
+      // 後台設定屬高敏感性資料，嚴格限制管理員存取
+      allow read, write: if isAdmin();
+    }
+
   }
 }
