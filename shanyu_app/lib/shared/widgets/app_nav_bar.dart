@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../features/auth/providers/auth_providers.dart';
+import '../../features/cart/providers/cart_providers.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
@@ -174,19 +175,60 @@ class _NavCategoryLinkState extends State<_NavCategoryLink> {
 
 // ── 購物車按鈕 ────────────────────────────────────────────────────────────────
 
-class _CartButton extends StatelessWidget {
+class _CartButton extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final itemCount = ref.watch(cartItemCountProvider);
+
     return SizedBox(
       width: _NavBarTokens.iconButtonSize,
       height: _NavBarTokens.iconButtonSize,
-      child: IconButton(
-        onPressed: () => context.go(AppRoutes.cart),
-        icon: const Icon(Icons.shopping_bag_outlined),
-        color: _NavBarTokens.brandBrown,
-        iconSize: 22,
-        tooltip: '購物車',
-        splashRadius: 20,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IconButton(
+            onPressed: () => context.go(AppRoutes.cart),
+            icon: const Icon(Icons.shopping_bag_outlined),
+            color: _NavBarTokens.brandBrown,
+            iconSize: 22,
+            tooltip: '購物車',
+            splashRadius: 20,
+          ),
+          if (itemCount > 0)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: _CartBadge(count: itemCount),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CartBadge extends StatelessWidget {
+  const _CartBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+      decoration: const BoxDecoration(
+        color: Color(0xFFFF5722),
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          height: 1.2,
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
