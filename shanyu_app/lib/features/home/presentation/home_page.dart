@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/app_nav_bar.dart';
 import '../providers/cms_providers.dart';
 import 'widgets/banner_carousel.dart';
+import 'widgets/brand_story_section.dart';
 import 'widgets/product_timeline.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
@@ -56,7 +57,7 @@ class _HomeBody extends ConsumerWidget {
           const SizedBox(height: _HomeTokens.sectionGap),
 
           // 品牌故事區塊
-          const _BrandStorySection(),
+          _BrandStorySectionWrapper(),
 
           const SizedBox(height: _HomeTokens.sectionGap),
 
@@ -70,122 +71,30 @@ class _HomeBody extends ConsumerWidget {
   }
 }
 
-// ── 品牌故事區塊 ──────────────────────────────────────────────────────────────
+// ── 品牌故事區塊包裝器 ────────────────────────────────────────────────────────
+//
+// 從 cmsHomepageProvider 讀取資料後交給 BrandStorySection 渲染。
+// BrandStorySection 本身是純 StatelessWidget，便於測試與複用。
 
-class _BrandStorySection extends ConsumerWidget {
-  const _BrandStorySection();
+class _BrandStorySectionWrapper extends ConsumerWidget {
+  const _BrandStorySectionWrapper();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cmsAsync = ref.watch(cmsHomepageProvider);
 
-    final title = cmsAsync.valueOrNull?.brandStoryTitle ?? '山裕的故事';
-    final content = cmsAsync.valueOrNull?.brandStoryContent ??
-        '我們來自梨山，用心栽培每一顆果實，將大自然的恩賜直送到您的餐桌。';
+    // 使用預設值讓骨架在資料尚未載入時也能顯示文字
+    final cms = cmsAsync.valueOrNull;
+    if (cms == null) {
+      return const SizedBox.shrink();
+    }
 
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(
           maxWidth: _HomeTokens.contentMaxWidth,
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: _HomeTokens.pagePadding,
-          ),
-          child: _BrandStoryCard(title: title, content: content),
-        ),
-      ),
-    );
-  }
-}
-
-class _BrandStoryCard extends StatelessWidget {
-  const _BrandStoryCard({
-    required this.title,
-    required this.content,
-  });
-
-  final String title;
-  final String content;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _HomeTokens.divider),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 16,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 裝飾線
-          Container(
-            width: 40,
-            height: 3,
-            decoration: BoxDecoration(
-              color: _HomeTokens.brandBrown,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 標題
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: _HomeTokens.textPrimary,
-              height: 1.3,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 內文
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 16,
-              color: _HomeTokens.textSecondary,
-              height: 1.8,
-            ),
-          ),
-
-          const SizedBox(height: 28),
-
-          // 瞭解更多按鈕（Placeholder，待後續功能實作）
-          OutlinedButton(
-            onPressed: null,
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: _HomeTokens.brandBrown),
-              foregroundColor: _HomeTokens.brandBrown,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              '瞭解更多',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
+        child: BrandStorySection(cms: cms),
       ),
     );
   }
