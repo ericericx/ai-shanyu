@@ -1,0 +1,21 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ============================================================
+    // 開發環境暫用寬鬆規則
+    // 警告：此規則僅適用於 development 階段
+    // Storage 結構（參考 design.md Section 3.5）：
+    //   /banners/          - Banner 圖片
+    //   /products/{id}/    - 商品圖片
+    //   /categories/{id}/  - 分類封面圖
+    //   /brand-story/      - 品牌故事圖片
+    //   /assets/logo/      - Logo
+    //   /assets/backgrounds/ - 背景圖
+    // 部署到 production 前必須替換為限制規則
+    // ============================================================
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}

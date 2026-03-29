@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // 開發環境暫用寬鬆規則
+    // 警告：此規則僅適用於 development 階段
+    // 正式安全規則請參考 design.md Section 3.2
+    // 部署到 production 前必須由 firebase-integrator 執行 T-03 替換
+    // ============================================================
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

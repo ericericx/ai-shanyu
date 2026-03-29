@@ -1,0 +1,77 @@
+# ============================================================
+# Firebase
+# ============================================================
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+*.local
+
+# Firebase emulator data（本地測試用，不提交）
+.firestore-emulator/
+storage-emulator/
+
+# ============================================================
+# Cloud Functions
+# ============================================================
+functions/node_modules/
+functions/lib/
+functions/.env
+functions/.env.*
+functions/.secret.*
+
+# ============================================================
+# Flutter / Dart
+# ============================================================
+shanyu_app/.dart_tool/
+shanyu_app/.flutter-plugins
+shanyu_app/.flutter-plugins-dependencies
+shanyu_app/.packages
+shanyu_app/build/
+shanyu_app/.pub-cache/
+shanyu_app/.pub/
+shanyu_app/pubspec.lock
+
+# Flutter Web build output
+shanyu_app/web/flutter_service_worker.js
+
+# Dart analysis
+shanyu_app/.dart_tool/
+
+# ============================================================
+# 環境變數與機密（絕對不可提交）
+# ============================================================
+.env
+.env.*
+*.pem
+*.p12
+*.json.key
+service-account*.json
+google-services.json
+GoogleService-Info.plist
+# Firebase options（含 API key，由 flutter-artisan 管理）
+shanyu_app/lib/firebase_options_development.dart
+shanyu_app/lib/firebase_options_production.dart
+
+# ============================================================
+# IDE / 系統
+# ============================================================
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+Thumbs.db
+
+# Node.js（根目錄若有 node_modules）
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ============================================================
+# 測試覆蓋率
+# ============================================================
+coverage/
+lcov.info

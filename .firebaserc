@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "staging": "shayu-staging",
+    "production": "shayu-production"
+  }
+}
