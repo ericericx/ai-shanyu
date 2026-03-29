@@ -5,7 +5,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/providers/auth_providers.dart';
+import '../../features/cart/presentation/cart_page.dart';
 import '../../features/home/presentation/home_page.dart';
+import '../../features/products/presentation/product_detail_page.dart';
 import '../../features/products/presentation/product_list_page.dart';
 
 part 'app_router.g.dart';
@@ -118,8 +120,9 @@ GoRouter appRouter(Ref ref) {
             builder: (context, state) {
               final categoryId = state.pathParameters['categoryId'] ?? '';
               final productId = state.pathParameters['productId'] ?? '';
-              return _PlaceholderPage(
-                title: '商品詳情 — $categoryId / $productId',
+              return ProductDetailPage(
+                categoryId: categoryId,
+                productId: productId,
               );
             },
           ),
@@ -128,7 +131,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.cart,
         name: 'cart',
-        builder: (context, state) => const _PlaceholderPage(title: '購物車'),
+        builder: (context, state) => const CartPage(),
       ),
       GoRoute(
         path: AppRoutes.orders,

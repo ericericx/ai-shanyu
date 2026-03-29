@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/category_model.dart';
+import '../models/product_detail_model.dart';
 import '../models/product_models.dart';
 
 /// 商品與分類的 Firestore 資料存取層。
@@ -44,5 +45,40 @@ class ProductRepository {
         await _firestore.collection('categories').doc(categoryId).get();
     if (!doc.exists) return null;
     return CategoryModel.fromFirestore(doc);
+  }
+
+  /// 監聽單一商品詳情（含 story、imageUrls）。
+  Stream<ProductDetailModel> watchProductDetail(String productId) {
+    return _firestore
+        .collection('products')
+        .doc(productId)
+        .snapshots()
+        .map((snap) {
+      if (!snap.exists) {
+        throw Exception('商品 $productId 不存在');
+      }
+      return ProductDetailModel.fromFirestore(
+        snap as DocumentSnapshot<Map<String, dynamic>>,
+      );
+    });
+  }
+
+  /// 監聽指定商品的所有變體，依 sortOrder 排序。
+  Stream<List<ProductVariantModel>> watchVariants(String productId) {
+    return _firestore
+        .collection('products')
+        .doc(productId)
+        .collection('variants')
+        .orderBy('sortOrder')
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map(
+                (doc) => ProductVariantModel.fromFirestore(
+                  doc as DocumentSnapshot<Map<String, dynamic>>,
+                ),
+              )
+              .toList(),
+        );
   }
 }
