@@ -1,0 +1,278 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/router/app_router.dart';
+import '../../features/auth/providers/auth_providers.dart';
+
+// ── 設計 Token ────────────────────────────────────────────────────────────────
+
+abstract final class _NavBarTokens {
+  static const brandBrown = Color(0xFF5C4033);
+  static const dividerGrey = Color(0xFFE0E0E0);
+  static const backgroundColor = Colors.white;
+  static const navLinkColor = Color(0xFF4E342E);
+  static const navLinkHoverColor = Color(0xFF5C4033);
+
+  static const appBarHeight = 64.0;
+  static const horizontalPadding = 24.0;
+  static const desktopHorizontalPadding = 40.0;
+  static const iconButtonSize = 40.0;
+  static const avatarRadius = 16.0;
+
+  static const mobileBreakpoint = 600.0;
+
+  static const logoFontSize = 22.0;
+  static const navLinkFontSize = 14.0;
+  static const loginFontSize = 14.0;
+}
+
+// ── 分類導覽連結定義 ──────────────────────────────────────────────────────────
+
+class _NavCategory {
+  const _NavCategory({required this.label, required this.categoryId});
+
+  final String label;
+  final String categoryId;
+}
+
+const _kNavCategories = [
+  _NavCategory(label: '梨山茶', categoryId: 'lishan-tea'),
+  _NavCategory(label: '水蜜桃', categoryId: 'peach'),
+  _NavCategory(label: '梨子', categoryId: 'pear'),
+];
+
+// ── AppNavBar ─────────────────────────────────────────────────────────────────
+
+/// 全站頂部導覽列。
+///
+/// 手機（< 600dp）：Logo + 購物車 + 登入/頭像
+/// 桌機（>= 600dp）：Logo + 分類連結 + 購物車 + 登入/頭像
+///
+/// 實作 [PreferredSizeWidget] 以直接用於 [Scaffold.appBar]。
+class AppNavBar extends ConsumerWidget implements PreferredSizeWidget {
+  const AppNavBar({super.key});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(_NavBarTokens.appBarHeight);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isDesktop = screenWidth >= _NavBarTokens.mobileBreakpoint;
+
+    return Container(
+      height: _NavBarTokens.appBarHeight,
+      decoration: const BoxDecoration(
+        color: _NavBarTokens.backgroundColor,
+        border: Border(
+          bottom: BorderSide(
+            color: _NavBarTokens.dividerGrey,
+            width: 1,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktop
+                ? _NavBarTokens.desktopHorizontalPadding
+                : _NavBarTokens.horizontalPadding,
+          ),
+          child: Row(
+            children: [
+              // ── 左側：品牌 Logo ──
+              _BrandLogo(),
+
+              const Spacer(),
+
+              // ── 中段：桌機分類連結 ──
+              if (isDesktop) ...[
+                ..._kNavCategories.map(
+                  (cat) => _NavCategoryLink(category: cat),
+                ),
+                const SizedBox(width: 16),
+              ],
+
+              // ── 右側：購物車 + 使用者動作 ──
+              _CartButton(),
+              const SizedBox(width: 4),
+              _UserAction(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── 品牌 Logo ─────────────────────────────────────────────────────────────────
+
+class _BrandLogo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => context.go(AppRoutes.home),
+        child: const Text(
+          '山裕',
+          style: TextStyle(
+            fontSize: _NavBarTokens.logoFontSize,
+            fontWeight: FontWeight.w700,
+            color: _NavBarTokens.brandBrown,
+            letterSpacing: 2,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── 分類導覽連結 ──────────────────────────────────────────────────────────────
+
+class _NavCategoryLink extends StatefulWidget {
+  const _NavCategoryLink({required this.category});
+
+  final _NavCategory category;
+
+  @override
+  State<_NavCategoryLink> createState() => _NavCategoryLinkState();
+}
+
+class _NavCategoryLinkState extends State<_NavCategoryLink> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: () => context.go('/products/${widget.category.categoryId}'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            style: TextStyle(
+              fontSize: _NavBarTokens.navLinkFontSize,
+              fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
+              color: _isHovered
+                  ? _NavBarTokens.navLinkHoverColor
+                  : _NavBarTokens.navLinkColor,
+            ),
+            child: Text(widget.category.label),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── 購物車按鈕 ────────────────────────────────────────────────────────────────
+
+class _CartButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: _NavBarTokens.iconButtonSize,
+      height: _NavBarTokens.iconButtonSize,
+      child: IconButton(
+        onPressed: () => context.go(AppRoutes.cart),
+        icon: const Icon(Icons.shopping_bag_outlined),
+        color: _NavBarTokens.brandBrown,
+        iconSize: 22,
+        tooltip: '購物車',
+        splashRadius: 20,
+      ),
+    );
+  }
+}
+
+// ── 使用者動作（登入 or 頭像） ────────────────────────────────────────────────
+
+class _UserAction extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+
+    if (user == null) {
+      return _LoginTextButton();
+    }
+
+    return _UserAvatar(
+      photoUrl: user.photoURL,
+      displayName: user.displayName,
+      email: user.email,
+    );
+  }
+}
+
+class _LoginTextButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: () => context.go(AppRoutes.login),
+      style: TextButton.styleFrom(
+        foregroundColor: _NavBarTokens.brandBrown,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: const Size(44, _NavBarTokens.iconButtonSize),
+        textStyle: const TextStyle(
+          fontSize: _NavBarTokens.loginFontSize,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      child: const Text('登入'),
+    );
+  }
+}
+
+class _UserAvatar extends StatelessWidget {
+  const _UserAvatar({
+    required this.photoUrl,
+    required this.displayName,
+    required this.email,
+  });
+
+  final String? photoUrl;
+  final String? displayName;
+  final String? email;
+
+  String get _initials {
+    final name = displayName ?? email ?? '?';
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: _NavBarTokens.iconButtonSize,
+      height: _NavBarTokens.iconButtonSize,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(_NavBarTokens.iconButtonSize / 2),
+        onTap: () => context.go(AppRoutes.profile),
+        child: Center(
+          child: CircleAvatar(
+            radius: _NavBarTokens.avatarRadius,
+            backgroundColor: _NavBarTokens.brandBrown,
+            backgroundImage:
+                photoUrl != null ? NetworkImage(photoUrl!) : null,
+            child: photoUrl == null
+                ? Text(
+                    _initials,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                : null,
+          ),
+        ),
+      ),
+    );
+  }
+}
