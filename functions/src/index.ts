@@ -33,5 +33,5 @@ export { scheduledPublishProducts } from "./products/scheduledPublish";
 export { onRoleUpdated } from "./admin/onRoleUpdated";
 export { getAdminStats } from "./admin/getAdminStats";
 
-// ─── 訂單功能（T-13，待實作）─────────────────────────────────────────────────
-// export * from "./orders";
+// ─── 訂單功能（T-13）─────────────────────────────────────────────────────────
+export { createOrder, getOrderHistory } from "./orders";
