@@ -21,21 +21,23 @@ Future<void> main() async {
   );
 }
 
-class ShanYuApp extends StatelessWidget {
+class ShanYuApp extends ConsumerWidget {
   const ShanYuApp({super.key, required this.config});
 
   final AppConfig config;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+
     return MaterialApp.router(
       title: config.appDisplayName,
       debugShowCheckedModeBanner: config.isDevelopment,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E7D32)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF5C4033)),
         useMaterial3: true,
       ),
-      routerConfig: appRouter,
+      routerConfig: router,
     );
   }
 }
