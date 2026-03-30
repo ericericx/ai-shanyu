@@ -53,22 +53,45 @@
 ## SPEC-02：使用者認證
 
 ### 目標
-實作完整的使用者認證流程，支援 Google OAuth 與 Email/Password 兩種登入方式。
+實作完整的使用者認證流程，支援 Google OAuth 與 Email/Password 兩種登入方式；登入或註冊成功後，確保 Firestore 存在對應使用者文件（含預設 `role`），以利購物車、會員資料與後續功能。
 
 ### 功能需求
 
-**FR-02-1** — Google Sign-In：使用者點擊「以 Google 帳號登入」後，完成 OAuth 流程並建立 Firestore 用戶資料
-**FR-02-2** — Email 註冊：使用者填寫 Email + 密碼，驗證 Email 格式，建立帳號
-**FR-02-3** — Email 登入：已註冊使用者以 Email + 密碼登入
+**FR-02-1** — Google Sign-In：使用者點擊「以 Google 帳號登入」後，完成 OAuth 流程；成功後若 `users/{uid}` 尚不存在，由 **客戶端**（`AuthRepository`）寫入 Firestore 使用者文件（見下方資料結構與規則）
+**FR-02-2** — Email 註冊：使用者填寫 Email + 密碼，驗證 Email 格式，建立帳號；成功後同 **FR-02-9** 確保 Firestore 使用者文件
+**FR-02-3** — Email 登入：已註冊使用者以 Email + 密碼登入；成功後同 **FR-02-9**（補齊舊帳號或觸發器未部署時缺件之文件）
 **FR-02-4** — 忘記密碼：發送密碼重設 Email
 **FR-02-5** — 登出：清除本地 Auth 狀態
 **FR-02-6** — 導覽列狀態同步：登入後右上角顯示用戶頭像/名稱，登出後顯示「登入」按鈕
 **FR-02-7** — 購物車同步：登入後自動載入 Firestore 中該用戶的購物車
-**FR-02-8** — 社群帳號綁定欄位：在 Firestore 用戶資料中保留 `socialBindings` 欄位（line/facebook），此版本不實作綁定 UI
+**FR-02-8** — 社群帳號綁定欄位：在 Firestore 用戶資料中保留 `lineLinked`、`facebookLinked`（boolean，預設 `false`）；長期可與 `socialBindings` 設計對齊，此版本不實作綁定 UI
+**FR-02-9** — Firestore 使用者文件（客戶端 lazy create）：實作於 `AuthRepository.ensureUserFirestoreProfile` — 於 Google 登入、Email 登入、Email 註冊 **成功且 `User` 非 null** 後執行；先 `get` `users/{uid}`，**僅在文件不存在時** `set` 一筆，欄位與 Cloud Function `onUserCreated` 一致；寫入失敗僅記錄 log，**不阻斷**登入流程
+**FR-02-10** — 後端選配：Cloud Function `onUserCreated`（Auth `onCreate`）在帳號 **首次建立** 時以 Admin SDK 建立同一結構之 `users/{uid}`（與客戶端並存時，以「先成功之建立」為主，其餘路徑需耐受文件已存在）
+
+### 資料結構（Firestore `users/{uid}`）
+
+與 `onUserCreated` / `ensureUserFirestoreProfile` 對齊：
+
+```
+uid: string              // 必須等於文件 ID
+email: string
+displayName: string | null
+photoURL: string | null
+role: string             // 註冊／首次建立時固定為 'customer'；晉升 admin 由後台流程與 custom claims 處理
+createdAt: Timestamp
+updatedAt: Timestamp
+lineLinked: boolean
+facebookLinked: boolean
+```
+
+### 安全規則（摘要）
+
+- `users/{userId}`：**本人**可 `create` 自己的文件，且需符合 `request.resource.data.uid == userId`、`request.resource.data.role == 'customer'`，避免客戶端自建 admin。
+- 其餘讀寫規則維持原設計（本人讀寫、admin 可讀寫他人等）。
 
 ### 使用者故事
-- 作為訪客，我可以點擊「以 Google 帳號登入」，完成 Google OAuth 後進入已登入狀態
-- 作為訪客，我可以以 Email 和密碼完成新帳號註冊
+- 作為訪客，我可以點擊「以 Google 帳號登入」，完成 Google OAuth 後進入已登入狀態，且 Firestore 會有我的使用者文件（若先前沒有）
+- 作為訪客，我可以以 Email 和密碼完成新帳號註冊，並寫入預設 `role: customer` 之使用者文件
 - 作為已登入用戶，我可以在右上角看到我的頭像，點擊後進入會員中心
 
 ### 驗收條件
@@ -76,6 +99,8 @@
 - [ ] Email 註冊並收到驗證信
 - [ ] 登入後導覽列即時更新
 - [ ] 登入後購物車資料自動同步
+- [ ] 首次註冊或首次登入後，Firestore `users` 底下可見對應 `uid` 文件，且 `role` 為 `customer`
+- [ ] 已存在之 `users/{uid}` 不會被登入流程覆寫
 
 ---
 

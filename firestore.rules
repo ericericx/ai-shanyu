@@ -31,8 +31,10 @@ service cloud.firestore {
       // 本人可讀取自己的資料；管理員可讀取任何使用者資料
       allow read: if isOwner(userId) || isAdmin();
 
-      // 只有本人可建立自己的文件（避免任意建立他人資料）
-      allow create: if isOwner(userId);
+      // 只有本人可建立自己的文件；欄位與 onUserCreated / 客戶端首次寫入對齊，禁止自建 admin
+      allow create: if isOwner(userId) &&
+                       request.resource.data.uid == userId &&
+                       request.resource.data.role == 'customer';
 
       // 本人可更新自己的資料；管理員可修改（例如停用帳號）
       allow update: if isOwner(userId) || isAdmin();

@@ -24,14 +24,12 @@ interface UserDocument {
   email: string;
   displayName: string | null;
   photoURL: string | null;
-  /** 使用者角色，預設為 'customer'；admin 透過 setAdminClaim 設定 */
-  role: "customer";
+  /** Default role on first signup; promote to admin via Firestore + onRoleUpdated */
+  role: string;
   createdAt: admin.firestore.Timestamp;
   updatedAt: admin.firestore.Timestamp;
-  /** LINE OAuth 是否已連結 */
-  lineLinked: false;
-  /** Facebook OAuth 是否已連結 */
-  facebookLinked: false;
+  lineLinked: boolean;
+  facebookLinked: boolean;
 }
 
 export const onUserCreated = auth

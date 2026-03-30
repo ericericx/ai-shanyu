@@ -1,13 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 /// Auth Repository — 封裝 FirebaseAuth 操作。
 ///
 /// 所有認證邏輯集中於此，禁止在 Widget 層直接呼叫 FirebaseAuth。
 class AuthRepository {
-  AuthRepository({FirebaseAuth? firebaseAuth})
-      : _auth = firebaseAuth ?? FirebaseAuth.instance;
+  AuthRepository({
+    FirebaseAuth? firebaseAuth,
+    FirebaseFirestore? firestore,
+  })  : _auth = firebaseAuth ?? FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseAuth _auth;
+  final FirebaseFirestore _firestore;
 
   // ── 狀態監聽 ──────────────────────────────────────────────────────────────
 
@@ -22,12 +28,23 @@ class AuthRepository {
   /// Google OAuth 登入（Flutter Web 使用 signInWithPopup）。
   Future<void> signInWithGoogle() async {
     final provider = GoogleAuthProvider();
-    await _auth.signInWithPopup(provider);
+    final credential = await _auth.signInWithPopup(provider);
+    final user = credential.user;
+    if (user != null) {
+      await ensureUserFirestoreProfile(user);
+    }
   }
 
   /// Email + Password 登入。
   Future<void> signInWithEmailPassword(String email, String password) async {
-    await _auth.signInWithEmailAndPassword(email: email, password: password);
+    final credential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    final user = credential.user;
+    if (user != null) {
+      await ensureUserFirestoreProfile(user);
+    }
   }
 
   /// Email + Password 建立新帳號。
@@ -35,10 +52,41 @@ class AuthRepository {
     String email,
     String password,
   ) async {
-    await _auth.createUserWithEmailAndPassword(
+    final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
+    final user = credential.user;
+    if (user != null) {
+      await ensureUserFirestoreProfile(user);
+    }
+  }
+
+  /// Writes `users/{uid}` when missing (same shape as Cloud Function onUserCreated).
+  ///
+  /// Development projects often run without deployed triggers; rules allow owner create.
+  Future<void> ensureUserFirestoreProfile(User user) async {
+    final uid = user.uid;
+    final docRef = _firestore.collection('users').doc(uid);
+    final snapshot = await docRef.get();
+    if (snapshot.exists) {
+      return;
+    }
+    try {
+      await docRef.set({
+        'uid': uid,
+        'email': user.email ?? '',
+        'displayName': user.displayName,
+        'photoURL': user.photoURL,
+        'role': 'customer',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'lineLinked': false,
+        'facebookLinked': false,
+      });
+    } catch (e, st) {
+      debugPrint('ensureUserFirestoreProfile failed: $e\n$st');
+    }
   }
 
   /// 登出。
