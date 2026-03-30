@@ -1,2 +1,3 @@
 - [山裕電商系統 v1](project_shanyu_ecommerce.md) — Firebase 全棧農產品電商，OpenSpec 已立項，24 個任務分配給 flutter-artisan 與 firebase-integrator
 - [admin-entry-button 歸檔紀錄](project_admin_entry_button.md) — NavBar 後台入口按鈕，2026-03-30 歸檔，commit 6d4a127，isAdminProvider.when() 模式
+- [navbar-dynamic-categories 歸檔紀錄](project_navbar_dynamic_categories.md) — NavBar 分類連結硬編碼 Bug Fix，2026-03-30 歸檔，移除 _kNavCategories 改接 categoriesProvider
