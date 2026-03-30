@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../features/admin/presentation/admin_shell.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/cart/presentation/cart_page.dart';
@@ -13,7 +14,6 @@ import '../../features/orders/presentation/order_history_page.dart';
 import '../../features/orders/presentation/order_success_page.dart';
 import '../../features/products/presentation/product_detail_page.dart';
 import '../../features/products/presentation/product_list_page.dart';
-
 part 'app_router.g.dart';
 
 // ── 路由名稱常數 ─────────────────────────────────────────────────────────────
@@ -30,6 +30,11 @@ abstract final class AppRoutes {
   static const orders = '/orders';
   static const profile = '/profile';
   static const admin = '/admin';
+  static const adminCms = '/admin/cms';
+  static const adminProducts = '/admin/products';
+  static const adminOrders = '/admin/orders';
+  static const adminCrm = '/admin/crm';
+  static const adminChat = '/admin/chat';
 }
 
 /// 需要登入才能訪問的路由集合。
@@ -66,7 +71,7 @@ GoRouter appRouter(Ref ref) {
   // 取得 auth 狀態的 listenable，讓 GoRouter 在狀態變化時重新執行 redirect。
   final authStateListenable = ValueNotifier<int>(0);
 
-  ref.listen(authStateProvider, (_, __) {
+  ref.listen(authStateProvider, (previous, next) {
     authStateListenable.value++;
   });
 
@@ -167,12 +172,70 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.profile,
         name: 'profile',
-        builder: (context, state) => const _PlaceholderPage(title: '會員中心'),
+        builder: (context, state) =>
+            const _PlaceholderPage(title: '會員中心'),
       ),
-      GoRoute(
-        path: AppRoutes.admin,
-        name: 'admin',
-        builder: (context, state) => const _PlaceholderPage(title: '後台管理'),
+      // ── Admin 後台 ShellRoute ────────────────────────────────────────────────
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            AdminShell(navigationShell: navigationShell),
+        branches: [
+          // 0：首頁視覺管理
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.adminCms,
+                name: 'adminCms',
+                builder: (context, state) =>
+                    const _PlaceholderPage(title: '首頁視覺管理'),
+              ),
+            ],
+          ),
+          // 1：商品管理（placeholder）
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.adminProducts,
+                name: 'adminProducts',
+                builder: (context, state) =>
+                    const _PlaceholderPage(title: '商品管理'),
+              ),
+            ],
+          ),
+          // 2：訂單管理（placeholder）
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.adminOrders,
+                name: 'adminOrders',
+                builder: (context, state) =>
+                    const _PlaceholderPage(title: '訂單管理'),
+              ),
+            ],
+          ),
+          // 3：CRM（placeholder）
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.adminCrm,
+                name: 'adminCrm',
+                builder: (context, state) =>
+                    const _PlaceholderPage(title: 'CRM'),
+              ),
+            ],
+          ),
+          // 4：客服（placeholder）
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.adminChat,
+                name: 'adminChat',
+                builder: (context, state) =>
+                    const _PlaceholderPage(title: '客服'),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );

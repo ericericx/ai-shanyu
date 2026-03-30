@@ -6,7 +6,7 @@ part of 'app_router.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$appRouterHash() => r'b4d622ac276cb3954ea1fb2ec6921beb6425f5f1';
+String _$appRouterHash() => r'ed35c5af4a4db568faea21b60a442e85cbc9bebe';
 
 /// GoRouter Provider — keepAlive 確保 router 在 App 生命週期內不被 dispose。
 /// 監聽 authStateProvider 驅動 redirect 邏輯。

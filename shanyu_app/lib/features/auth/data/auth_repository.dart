@@ -31,6 +31,7 @@ class AuthRepository {
     final credential = await _auth.signInWithPopup(provider);
     final user = credential.user;
     if (user != null) {
+      await _logIdTokenClaims('signInWithGoogle', user);
       await ensureUserFirestoreProfile(user);
     }
   }
@@ -43,6 +44,7 @@ class AuthRepository {
     );
     final user = credential.user;
     if (user != null) {
+      await _logIdTokenClaims('signInWithEmailPassword', user);
       await ensureUserFirestoreProfile(user);
     }
   }
@@ -58,21 +60,31 @@ class AuthRepository {
     );
     final user = credential.user;
     if (user != null) {
+      await _logIdTokenClaims('createUserWithEmailPassword', user);
       await ensureUserFirestoreProfile(user);
     }
   }
 
-  /// Writes `users/{uid}` when missing (same shape as Cloud Function onUserCreated).
+  /// Writes `users/{uid}` when missing (canonical profile shape for this app).
   ///
-  /// Development projects often run without deployed triggers; rules allow owner create.
+  /// Rules allow the signed-in owner to create their own document with role customer.
   Future<void> ensureUserFirestoreProfile(User user) async {
     final uid = user.uid;
     final docRef = _firestore.collection('users').doc(uid);
     final snapshot = await docRef.get();
     if (snapshot.exists) {
+      if (kDebugMode) {
+        debugPrint(
+          '[ShanYu:Auth] ensureUserFirestoreProfile skip (exists) uid=$uid '
+          'role=${snapshot.data()?['role']}',
+        );
+      }
       return;
     }
     try {
+      if (kDebugMode) {
+        debugPrint('[ShanYu:Auth] ensureUserFirestoreProfile creating uid=$uid');
+      }
       await docRef.set({
         'uid': uid,
         'email': user.email ?? '',
@@ -85,7 +97,23 @@ class AuthRepository {
         'facebookLinked': false,
       });
     } catch (e, st) {
-      debugPrint('ensureUserFirestoreProfile failed: $e\n$st');
+      debugPrint('[ShanYu:Auth] ensureUserFirestoreProfile failed: $e\n$st');
+    }
+  }
+
+  Future<void> _logIdTokenClaims(String source, User user) async {
+    if (!kDebugMode) {
+      return;
+    }
+    try {
+      final result = await user.getIdTokenResult(true);
+      final c = result.claims;
+      debugPrint(
+        '[ShanYu:Auth] $source uid=${user.uid} email=${user.email} '
+        'claimsKeys=${c?.keys.toList()} admin=${c?['admin']}',
+      );
+    } catch (e, st) {
+      debugPrint('[ShanYu:Auth] $source getIdTokenResult failed: $e\n$st');
     }
   }
 
