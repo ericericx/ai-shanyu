@@ -140,32 +140,21 @@
 **優先序**：P0
 
 **工作內容**：
-1. 撰寫 Cloud Functions `onUserCreated` trigger：新用戶建立時，在 `/users/{uid}` 建立初始文件
-2. 確認 Google Sign-In 在 Firebase Console 中已設定授權網域
-3. 設計 `/users/{uid}` 文件結構（參考 design.md Section 3.1）
-
-**Cloud Function 內容**：
-```typescript
-export const onUserCreated = functions.auth.user().onCreate(async (user) => {
-  await admin.firestore().collection('users').doc(user.uid).set({
-    uid: user.uid,
-    email: user.email || '',
-    displayName: user.displayName || '',
-    photoURL: user.photoURL || '',
-    provider: user.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
-    isAdmin: false,
-    socialBindings: {},
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
-});
-```
+1. 定義 `/users/{uid}` 文件結構（與 SPEC-02、`design.md` Section 3.1 對齊）
+2. **Cloud Functions**：`onUserCreated`（Auth `onCreate` 建立文件）、`getMe`（callable；缺文件時以 Admin SDK 補建後回傳）、共用 `userDocument.ts`；`setAdminClaim`（callable，僅既有 admin 可晉升他人）
+3. **Flutter**：`AuthRepository.ensureUserFirestoreProfile` 於登入／註冊成功後，若文件不存在則由客戶端寫入（與後端欄位一致）；Firestore 規則允許本人 `create` 且 `role` 必須為 `customer`
+4. **首位管理員**：Firebase Console 無法編輯 custom claims；提供本機腳本 `npm run bootstrap-admin -- <UID>`（`functions/src/scripts/setBootstrapAdmin.ts`），需 `gcloud auth application-default login` 或 `GOOGLE_APPLICATION_CREDENTIALS` 指向服務帳號 JSON
+5. 確認 Google Sign-In 在 Firebase Console 中已設定授權網域
 
 **產出物**：
-- `functions/src/auth.ts`
+- `firestore.rules`（users 建立條件）
+- `functions/src/auth/onUserCreated.ts`、`getMe.ts`、`userDocument.ts`、`setAdminClaim.ts`
+- `functions/src/scripts/setBootstrapAdmin.ts`、`package.json` 之 `bootstrap-admin` script
+- `shanyu_app/.../auth_repository.dart`（客戶端補文件與除錯 log）
 
 **驗收條件**：
-- [ ] 新用戶 Google 登入後，Firestore `/users/{uid}` 自動建立
+- [ ] 新用戶 Google 或 Email 註冊／登入後，Firestore `/users/{uid}` 存在且 `role` 為 customer（後端觸發與／或客戶端補齊）
+- [ ] 本機可執行 `bootstrap-admin` 為指定 UID 寫入 `admin: true` claim（並同步 Firestore `role: admin` 若文件已存在）
 
 ---
 
@@ -431,24 +420,25 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
 ---
 
 ### T-17：後台路由保護與 Admin Custom Claims
-**負責**：firebase-integrator
+**負責**：firebase-integrator（後端 claim、觸發器）+ flutter-artisan（後台 UI／路由）
 **相依**：T-05
 **優先序**：P1
 
 **工作內容**：
-1. 撰寫 Cloud Function 設定 admin custom claim：
-   ```typescript
-   export const setAdminClaim = functions.https.onCall(async (data, context) => {
-     // 只有已是 admin 的用戶可以設定其他用戶為 admin（bootstrap 例外）
-     await admin.auth().setCustomUserClaims(data.uid, { admin: true });
-   });
-   ```
-2. 提供初始化腳本：設定第一個 admin 用戶
-3. GoRouter redirect 邏輯（確認 token 中有 admin: true）
+1. **後端**：`setAdminClaim` callable（caller 須具 `admin` claim）；Firestore `onRoleUpdated` 依 `users/{uid}.role` 同步 `admin` custom claim（見 functions 既有實作）
+2. **首位 admin**：見 T-05 之 `bootstrap-admin` 腳本（Console 無法手動設 claims）
+3. **前端**：`isAdminProvider` 讀取 ID Token `claims['admin']`，檢查時使用 `getIdTokenResult(true)` 以取得最新 claim；`kDebugMode` 下輸出 `[ShanYu:Admin]` log 供除錯
+4. **前端**：`AdminShell` 包住 `/admin/*` 子路由；非 admin 顯示無權限頁，並提供「重新整理權限」（invalidate `isAdminProvider`）；未登入者由 GoRouter 導向 `/login`（`/admin` 前綴為受保護路由）
+5. **路由**：GoRouter 註冊 `StatefulShellRoute`：`/admin/cms`、products、orders、crm、chat 等（部分可為 placeholder）
+
+**產出物**：
+- `shanyu_app/lib/features/admin/providers/admin_providers.dart`（含 codegen `.g.dart`）
+- `shanyu_app/lib/features/admin/presentation/admin_shell.dart` 及後台相關頁／repository（隨迭代擴充）
+- `shanyu_app/lib/core/router/app_router.dart`（後台路由）
 
 **驗收條件**：
-- [ ] 非 admin 用戶訪問 /admin 自動導向首頁
-- [ ] admin 用戶可正常訪問所有後台頁面
+- [ ] 無 `admin` claim 之用戶開啟 `/admin/cms` 等後台路徑時，看到無權限說明（非誤闖空白）
+- [ ] 具 `admin: true` claim 之用戶可進入後台 shell 與子頁；變更 role／claim 後可透過重新整理 token 或「重新整理權限」生效
 
 ---
 

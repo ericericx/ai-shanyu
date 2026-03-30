@@ -65,12 +65,11 @@
 **FR-02-6** — 導覽列狀態同步：登入後右上角顯示用戶頭像/名稱，登出後顯示「登入」按鈕
 **FR-02-7** — 購物車同步：登入後自動載入 Firestore 中該用戶的購物車
 **FR-02-8** — 社群帳號綁定欄位：在 Firestore 用戶資料中保留 `lineLinked`、`facebookLinked`（boolean，預設 `false`）；長期可與 `socialBindings` 設計對齊，此版本不實作綁定 UI
-**FR-02-9** — Firestore 使用者文件（客戶端 lazy create）：實作於 `AuthRepository.ensureUserFirestoreProfile` — 於 Google 登入、Email 登入、Email 註冊 **成功且 `User` 非 null** 後執行；先 `get` `users/{uid}`，**僅在文件不存在時** `set` 一筆，欄位與 Cloud Function `onUserCreated` 一致；寫入失敗僅記錄 log，**不阻斷**登入流程
-**FR-02-10** — 後端選配：Cloud Function `onUserCreated`（Auth `onCreate`）在帳號 **首次建立** 時以 Admin SDK 建立同一結構之 `users/{uid}`（與客戶端並存時，以「先成功之建立」為主，其餘路徑需耐受文件已存在）
+**FR-02-9** — Firestore 使用者文件（客戶端 lazy create）：實作於 `AuthRepository.ensureUserFirestoreProfile` — 於 Google 登入、Email 登入、Email 註冊 **成功且 `User` 非 null** 後執行；先 `get` `users/{uid}`，**僅在文件不存在時** `set` 一筆（欄位見下方）；寫入失敗僅記錄 log，**不阻斷**登入流程
 
 ### 資料結構（Firestore `users/{uid}`）
 
-與 `onUserCreated` / `ensureUserFirestoreProfile` 對齊：
+與 `ensureUserFirestoreProfile` 寫入欄位一致：
 
 ```
 uid: string              // 必須等於文件 ID
