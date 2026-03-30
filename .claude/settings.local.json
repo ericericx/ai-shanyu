@@ -14,7 +14,22 @@
       "Bash(dart pub:*)",
       "Bash(flutterfire configure:*)",
       "Bash(flutter pub:*)",
-      "Bash(flutter build:*)"
+      "Bash(flutter build:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(gh auth:*)",
+      "Bash(git config:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(git stash:*)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --env-filter ':*)",
+      "Bash(dart run:*)",
+      "Bash(git -C /Users/eric.chien/Desktop/MyProject/ai-shanyu add shanyu_app/lib/features/auth/ shanyu_app/lib/core/router/app_router.dart shanyu_app/lib/core/router/app_router.g.dart shanyu_app/lib/main.dart shanyu_app/pubspec.yaml shanyu_app/web/index.html)",
+      "Bash(git -C:*)",
+      "Bash(find /Users/eric.chien/Desktop/MyProject/ai-shanyu/shanyu_app/lib -name *.dart)",
+      "Bash(openspec status:*)"
     ]
   }
 }
