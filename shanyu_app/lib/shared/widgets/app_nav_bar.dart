@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/cart/providers/cart_providers.dart';
+import '../../features/chat/providers/chat_providers.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
@@ -96,7 +97,9 @@ class AppNavBar extends ConsumerWidget implements PreferredSizeWidget {
                 const SizedBox(width: 16),
               ],
 
-              // ── 右側：購物車 + 使用者動作 ──
+              // ── 右側：Chat + 購物車 + 使用者動作 ──
+              _ChatButton(),
+              const SizedBox(width: 4),
               _CartButton(),
               const SizedBox(width: 4),
               _UserAction(),
@@ -168,6 +171,54 @@ class _NavCategoryLinkState extends State<_NavCategoryLink> {
             child: Text(widget.category.label),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Chat 客服按鈕 ─────────────────────────────────────────────────────────────
+
+class _ChatButton extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unreadCount =
+        ref.watch(unreadChatCountProvider).valueOrNull ?? 0;
+
+    return SizedBox(
+      width: _NavBarTokens.iconButtonSize,
+      height: _NavBarTokens.iconButtonSize,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IconButton(
+            onPressed: () => context.go(AppRoutes.chat),
+            icon: const Icon(Icons.chat_bubble_outline),
+            color: _NavBarTokens.brandBrown,
+            iconSize: 22,
+            tooltip: '聯繫我們',
+            splashRadius: 20,
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: _UnreadBadge(),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UnreadBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: const BoxDecoration(
+        color: Color(0xFFE53935),
+        shape: BoxShape.circle,
       ),
     );
   }
