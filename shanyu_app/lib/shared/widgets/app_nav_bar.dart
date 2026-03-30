@@ -7,6 +7,8 @@ import '../../features/admin/providers/admin_providers.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/cart/providers/cart_providers.dart';
 import '../../features/chat/providers/chat_providers.dart';
+import '../../features/products/models/category_model.dart';
+import '../../features/products/providers/product_providers.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
@@ -29,21 +31,6 @@ abstract final class _NavBarTokens {
   static const navLinkFontSize = 14.0;
   static const loginFontSize = 14.0;
 }
-
-// ── 分類導覽連結定義 ──────────────────────────────────────────────────────────
-
-class _NavCategory {
-  const _NavCategory({required this.label, required this.categoryId});
-
-  final String label;
-  final String categoryId;
-}
-
-const _kNavCategories = [
-  _NavCategory(label: '梨山茶', categoryId: 'lishan-tea'),
-  _NavCategory(label: '水蜜桃', categoryId: 'peach'),
-  _NavCategory(label: '梨子', categoryId: 'pear'),
-];
 
 // ── AppNavBar ─────────────────────────────────────────────────────────────────
 
@@ -92,10 +79,21 @@ class AppNavBar extends ConsumerWidget implements PreferredSizeWidget {
 
               // ── 中段：桌機分類連結 ──
               if (isDesktop) ...[
-                ..._kNavCategories.map(
-                  (cat) => _NavCategoryLink(category: cat),
+                ref.watch(categoriesProvider).when(
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, _) => const SizedBox.shrink(),
+                  data: (categories) {
+                    final sorted = [...categories]
+                      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ...sorted.map((cat) => _NavCategoryLink(category: cat)),
+                        if (sorted.isNotEmpty) const SizedBox(width: 16),
+                      ],
+                    );
+                  },
                 ),
-                const SizedBox(width: 16),
               ],
 
               // ── 右側：Chat + 購物車 + 後台 + 使用者動作 ──
@@ -142,7 +140,7 @@ class _BrandLogo extends StatelessWidget {
 class _NavCategoryLink extends StatefulWidget {
   const _NavCategoryLink({required this.category});
 
-  final _NavCategory category;
+  final CategoryModel category;
 
   @override
   State<_NavCategoryLink> createState() => _NavCategoryLinkState();
@@ -158,7 +156,7 @@ class _NavCategoryLinkState extends State<_NavCategoryLink> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        onTap: () => context.go('/products/${widget.category.categoryId}'),
+        onTap: () => context.go('/products/${widget.category.id}'),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: AnimatedDefaultTextStyle(
@@ -171,7 +169,7 @@ class _NavCategoryLinkState extends State<_NavCategoryLink> {
                   ? _NavBarTokens.navLinkHoverColor
                   : _NavBarTokens.navLinkColor,
             ),
-            child: Text(widget.category.label),
+            child: Text(widget.category.name),
           ),
         ),
       ),
