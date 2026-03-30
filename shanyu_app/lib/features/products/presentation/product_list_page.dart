@@ -380,9 +380,9 @@ class _ProductGridSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
+    return SliverLayoutBuilder(
       builder: (context, constraints) {
-        final columns = _columnCount(constraints.maxWidth);
+        final columns = _columnCount(constraints.crossAxisExtent);
         return SliverPadding(
           padding: const EdgeInsets.symmetric(
             horizontal: _ProductListTokens.pagePadding,
