@@ -3,7 +3,7 @@
  *
  * 所有 function 統一在此匯出，region 統一為 asia-east1。
  * 各功能模組對應任務如下：
- *   - auth/     : T-05 使用者認證觸發器與 callable functions
+ *   - auth/     : T-05 onUserCreated、getMe、setAdminClaim
  *   - products/ : T-14 預約上架排程（scheduledPublishProducts）
  *   - admin/    : T-17 角色變更同步 claim（onRoleUpdated）、後台統計（getAdminStats）
  *   - orders/   : T-13 訂單建立通知（onOrderCreated）
@@ -23,8 +23,8 @@ export { healthCheck } from "./health";
 
 // ─── Auth 功能（T-05）────────────────────────────────────────────────────────
 export { onUserCreated } from "./auth/onUserCreated";
-export { setAdminClaim } from "./auth/setAdminClaim";
 export { getMe } from "./auth/getMe";
+export { setAdminClaim } from "./auth/setAdminClaim";
 
 // ─── 商品功能（T-14）─────────────────────────────────────────────────────────
 export { scheduledPublishProducts } from "./products/scheduledPublish";
@@ -35,3 +35,12 @@ export { getAdminStats } from "./admin/getAdminStats";
 
 // ─── 訂單功能（T-13）─────────────────────────────────────────────────────────
 export { createOrder, getOrderHistory } from "./orders";
+
+// ─── 行為追蹤 Analytics（T-19）───────────────────────────────────────────────
+export { getProductViewStats } from "./analytics/getProductViewStats";
+export { getTopProducts } from "./analytics/getTopProducts";
+
+// ─── 即時 Chat 客服（T-20）───────────────────────────────────────────────────
+export { onChatMessage } from "./chat/onChatMessage";
+export { getChatList } from "./chat/getChatList";
+export { closeChat } from "./chat/closeChat";
