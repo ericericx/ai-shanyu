@@ -6,7 +6,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/cart/presentation/cart_page.dart';
+import '../../features/chat/presentation/chat_page.dart';
 import '../../features/home/presentation/home_page.dart';
+import '../../features/orders/presentation/checkout_page.dart';
+import '../../features/orders/presentation/order_history_page.dart';
+import '../../features/orders/presentation/order_success_page.dart';
 import '../../features/products/presentation/product_detail_page.dart';
 import '../../features/products/presentation/product_list_page.dart';
 
@@ -20,6 +24,9 @@ abstract final class AppRoutes {
   static const products = '/products/:categoryId';
   static const productDetail = '/products/:categoryId/:productId';
   static const cart = '/cart';
+  static const chat = '/chat';
+  static const checkout = '/orders/new';
+  static const orderSuccess = '/orders/success/:orderId';
   static const orders = '/orders';
   static const profile = '/profile';
   static const admin = '/admin';
@@ -28,6 +35,7 @@ abstract final class AppRoutes {
 /// 需要登入才能訪問的路由集合。
 const _protectedRoutes = {
   AppRoutes.cart,
+  AppRoutes.checkout,
   AppRoutes.orders,
   AppRoutes.profile,
   AppRoutes.admin,
@@ -134,9 +142,27 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const CartPage(),
       ),
       GoRoute(
+        path: AppRoutes.chat,
+        name: 'chat',
+        builder: (context, state) => const ChatPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.checkout,
+        name: 'checkout',
+        builder: (context, state) => const CheckoutPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.orderSuccess,
+        name: 'orderSuccess',
+        builder: (context, state) {
+          final orderId = state.pathParameters['orderId'] ?? '';
+          return OrderSuccessPage(orderId: orderId);
+        },
+      ),
+      GoRoute(
         path: AppRoutes.orders,
         name: 'orders',
-        builder: (context, state) => const _PlaceholderPage(title: '訂單列表'),
+        builder: (context, state) => const OrderHistoryPage(),
       ),
       GoRoute(
         path: AppRoutes.profile,
