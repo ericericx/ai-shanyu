@@ -4,7 +4,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/providers/auth_providers.dart';
 import '../../../shared/widgets/app_nav_bar.dart';
+import '../data/product_view_tracker.dart';
 import '../models/product_detail_model.dart';
 import '../providers/product_providers.dart';
 
@@ -59,6 +61,17 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   /// 目前顯示的主圖 URL（null 時使用 coverImageUrl）
   String? _activeImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    // 在第一幀結束後觸發追蹤，確保 ref 已完成掛載
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final userId = ref.read(currentUserProvider)?.uid;
+      ProductViewTracker().trackProductView(widget.productId, userId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
