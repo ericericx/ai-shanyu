@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../features/admin/presentation/admin_chat_page.dart';
 import '../../features/admin/presentation/admin_shell.dart';
+import '../../features/admin/presentation/cms_page.dart';
+import '../../features/admin/presentation/crm_page.dart';
 import '../../features/admin/presentation/products_admin_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/providers/auth_providers.dart';
@@ -187,8 +190,7 @@ GoRouter appRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.adminCms,
                 name: 'adminCms',
-                builder: (context, state) =>
-                    const _PlaceholderPage(title: '首頁視覺管理'),
+                builder: (context, state) => const CmsPage(),
               ),
             ],
           ),
@@ -219,8 +221,7 @@ GoRouter appRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.adminCrm,
                 name: 'adminCrm',
-                builder: (context, state) =>
-                    const _PlaceholderPage(title: 'CRM'),
+                builder: (context, state) => const CrmPage(),
               ),
             ],
           ),
@@ -230,8 +231,7 @@ GoRouter appRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.adminChat,
                 name: 'adminChat',
-                builder: (context, state) =>
-                    const _PlaceholderPage(title: '客服'),
+                builder: (context, state) => const AdminChatPage(),
               ),
             ],
           ),

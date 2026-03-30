@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/providers/auth_providers.dart';
+import '../../cart/data/cart_repository.dart';
+import '../../cart/models/cart_models.dart';
+import '../../cart/providers/cart_providers.dart';
 import '../../../shared/widgets/app_nav_bar.dart';
 import '../data/product_view_tracker.dart';
 import '../models/product_detail_model.dart';
@@ -62,6 +65,56 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   /// 目前顯示的主圖 URL（null 時使用 coverImageUrl）
   String? _activeImageUrl;
 
+  bool _isAddingToCart = false;
+
+  Future<void> _handleAddToCart(
+    ProductDetailModel detail,
+    ProductVariantModel variant,
+  ) async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('請先登入才能加入購物車')),
+        );
+      }
+      return;
+    }
+    setState(() => _isAddingToCart = true);
+    try {
+      final repo = ref.read(cartRepositoryProvider);
+      await repo.addItem(
+        user.uid,
+        CartItem(
+          productId: widget.productId,
+          variantId: variant.id,
+          productName: detail.name,
+          variantName: variant.name,
+          price: variant.price,
+          quantity: 1,
+          isPreorder: variant.isPreorder,
+          imageUrl: variant.imageUrls.isNotEmpty
+              ? variant.imageUrls.first
+              : detail.coverImageUrl,
+          estimatedShipDate: variant.estimatedShipDate,
+        ),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已加入購物車')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('加入失敗：$e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isAddingToCart = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -112,7 +165,13 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
       ),
       bottomNavigationBar: detailAsync.valueOrNull == null
           ? null
-          : _AddToCartBar(variant: selectedVariant),
+          : _AddToCartBar(
+              variant: selectedVariant,
+              isLoading: _isAddingToCart,
+              onAddToCart: selectedVariant != null
+                  ? () => _handleAddToCart(detailAsync.value!, selectedVariant)
+                  : null,
+            ),
     );
   }
 }
@@ -672,9 +731,15 @@ class _StoryExpansion extends StatelessWidget {
 // ── 底部加入購物車 Bar ─────────────────────────────────────────────────────────
 
 class _AddToCartBar extends StatelessWidget {
-  const _AddToCartBar({required this.variant});
+  const _AddToCartBar({
+    required this.variant,
+    required this.isLoading,
+    this.onAddToCart,
+  });
 
   final ProductVariantModel? variant;
+  final bool isLoading;
+  final VoidCallback? onAddToCart;
 
   @override
   Widget build(BuildContext context) {
@@ -684,7 +749,9 @@ class _AddToCartBar extends StatelessWidget {
 
     // 按鈕狀態文字
     final String buttonLabel;
-    if (!hasVariantSelected) {
+    if (isLoading) {
+      buttonLabel = '加入中...';
+    } else if (!hasVariantSelected) {
       buttonLabel = '請先選擇規格';
     } else if (!isAvailable) {
       buttonLabel = '已售完';
@@ -692,7 +759,7 @@ class _AddToCartBar extends StatelessWidget {
       buttonLabel = '加入購物車';
     }
 
-    final bool isEnabled = hasVariantSelected && isAvailable;
+    final bool isEnabled = hasVariantSelected && isAvailable && !isLoading;
 
     return SafeArea(
       child: Container(
@@ -710,7 +777,7 @@ class _AddToCartBar extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
             child: ElevatedButton(
-              onPressed: isEnabled ? () {} : null,
+              onPressed: isEnabled ? onAddToCart : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: isEnabled
                     ? _DetailTokens.brandBrown
