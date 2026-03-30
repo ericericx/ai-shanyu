@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
+import '../../features/admin/providers/admin_providers.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/cart/providers/cart_providers.dart';
 import '../../features/chat/providers/chat_providers.dart';
@@ -97,10 +98,12 @@ class AppNavBar extends ConsumerWidget implements PreferredSizeWidget {
                 const SizedBox(width: 16),
               ],
 
-              // ── 右側：Chat + 購物車 + 使用者動作 ──
+              // ── 右側：Chat + 購物車 + 後台 + 使用者動作 ──
               _ChatButton(),
               const SizedBox(width: 4),
               _CartButton(),
+              const SizedBox(width: 4),
+              _AdminEntryButton(),
               const SizedBox(width: 4),
               _UserAction(),
             ],
@@ -281,6 +284,33 @@ class _CartBadge extends StatelessWidget {
         ),
         textAlign: TextAlign.center,
       ),
+    );
+  }
+}
+
+// ── 後台入口按鈕 ──────────────────────────────────────────────────────────────
+
+class _AdminEntryButton extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ref.watch(isAdminProvider).when(
+      loading: () => const SizedBox.shrink(),
+      error: (e, _) => const SizedBox.shrink(),
+      data: (isAdmin) {
+        if (!isAdmin) return const SizedBox.shrink();
+        return SizedBox(
+          width: _NavBarTokens.iconButtonSize,
+          height: _NavBarTokens.iconButtonSize,
+          child: IconButton(
+            onPressed: () => context.go(AppRoutes.adminCms),
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            color: _NavBarTokens.brandBrown,
+            iconSize: 22,
+            tooltip: '後台管理',
+            splashRadius: 20,
+          ),
+        );
+      },
     );
   }
 }
