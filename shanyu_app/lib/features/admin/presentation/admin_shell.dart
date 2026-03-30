@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../providers/admin_providers.dart';
 
 // ── 常數 ──────────────────────────────────────────────────────────────────────
@@ -147,6 +148,17 @@ class _DesktopLayout extends StatelessWidget {
                     },
                   ),
                 ),
+                const Divider(),
+                _DesktopNavTile(
+                  item: const _NavItem(
+                    label: '返回首頁',
+                    icon: Icons.home_outlined,
+                    selectedIcon: Icons.home,
+                    path: AppRoutes.home,
+                  ),
+                  isSelected: false,
+                  onTap: () => context.go(AppRoutes.home),
+                ),
               ],
             ),
           ),
@@ -227,25 +239,41 @@ class _MobileLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) {
-          navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
-          );
-        },
-        destinations: _kNavItems
-            .map(
-              (item) => NavigationDestination(
-                icon: Icon(item.icon),
-                selectedIcon: Icon(item.selectedIcon),
-                label: item.label,
-              ),
-            )
-            .toList(),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Material(
+            color: colorScheme.surfaceContainerLow,
+            child: ListTile(
+              leading: const Icon(Icons.home_outlined),
+              title: const Text('返回首頁'),
+              dense: true,
+              onTap: () => context.go(AppRoutes.home),
+            ),
+          ),
+          NavigationBar(
+            selectedIndex: navigationShell.currentIndex,
+            onDestinationSelected: (index) {
+              navigationShell.goBranch(
+                index,
+                initialLocation: index == navigationShell.currentIndex,
+              );
+            },
+            destinations: _kNavItems
+                .map(
+                  (item) => NavigationDestination(
+                    icon: Icon(item.icon),
+                    selectedIcon: Icon(item.selectedIcon),
+                    label: item.label,
+                  ),
+                )
+                .toList(),
+          ),
+        ],
       ),
     );
   }
