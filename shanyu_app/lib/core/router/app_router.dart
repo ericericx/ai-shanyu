@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../features/admin/presentation/admin_shell.dart';
+import '../../features/admin/presentation/products_admin_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/cart/presentation/cart_page.dart';
@@ -14,6 +15,7 @@ import '../../features/orders/presentation/order_history_page.dart';
 import '../../features/orders/presentation/order_success_page.dart';
 import '../../features/products/presentation/product_detail_page.dart';
 import '../../features/products/presentation/product_list_page.dart';
+import '../../features/profile/presentation/profile_page.dart';
 part 'app_router.g.dart';
 
 // ── 路由名稱常數 ─────────────────────────────────────────────────────────────
@@ -172,8 +174,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.profile,
         name: 'profile',
-        builder: (context, state) =>
-            const _PlaceholderPage(title: '會員中心'),
+        builder: (context, state) => const ProfilePage(),
       ),
       // ── Admin 後台 ShellRoute ────────────────────────────────────────────────
       StatefulShellRoute.indexedStack(
@@ -191,14 +192,13 @@ GoRouter appRouter(Ref ref) {
               ),
             ],
           ),
-          // 1：商品管理（placeholder）
+          // 1：商品管理
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: AppRoutes.adminProducts,
                 name: 'adminProducts',
-                builder: (context, state) =>
-                    const _PlaceholderPage(title: '商品管理'),
+                builder: (context, state) => const ProductsAdminPage(),
               ),
             ],
           ),
