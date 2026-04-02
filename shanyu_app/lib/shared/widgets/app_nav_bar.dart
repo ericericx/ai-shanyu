@@ -13,11 +13,11 @@ import '../../features/products/providers/product_providers.dart';
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
 abstract final class _NavBarTokens {
-  static const brandBrown = Color(0xFF5C4033);
+  static const brandRed = Color(0xFFB82020);
   static const dividerGrey = Color(0xFFE0E0E0);
   static const backgroundColor = Colors.white;
-  static const navLinkColor = Color(0xFF4E342E);
-  static const navLinkHoverColor = Color(0xFF5C4033);
+  static const navLinkColor = Color(0xFF9C1B1B);
+  static const navLinkHoverColor = Color(0xFFB82020);
 
   static const appBarHeight = 64.0;
   static const horizontalPadding = 24.0;
@@ -121,14 +121,10 @@ class _BrandLogo extends StatelessWidget {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () => context.go(AppRoutes.home),
-        child: const Text(
-          '山裕',
-          style: TextStyle(
-            fontSize: _NavBarTokens.logoFontSize,
-            fontWeight: FontWeight.w700,
-            color: _NavBarTokens.brandBrown,
-            letterSpacing: 2,
-          ),
+        child: Image.asset(
+          'assets/images/shanyu.avif',
+          height: 36,
+          fit: BoxFit.contain,
         ),
       ),
     );
@@ -194,7 +190,7 @@ class _ChatButton extends ConsumerWidget {
           IconButton(
             onPressed: () => context.go(AppRoutes.chat),
             icon: const Icon(Icons.chat_bubble_outline),
-            color: _NavBarTokens.brandBrown,
+            color: _NavBarTokens.brandRed,
             iconSize: 22,
             tooltip: '聯繫我們',
             splashRadius: 20,
@@ -241,7 +237,7 @@ class _CartButton extends ConsumerWidget {
           IconButton(
             onPressed: () => context.go(AppRoutes.cart),
             icon: const Icon(Icons.shopping_bag_outlined),
-            color: _NavBarTokens.brandBrown,
+            color: _NavBarTokens.brandRed,
             iconSize: 22,
             tooltip: '購物車',
             splashRadius: 20,
@@ -302,7 +298,7 @@ class _AdminEntryButton extends ConsumerWidget {
           child: IconButton(
             onPressed: () => context.go(AppRoutes.adminCms),
             icon: const Icon(Icons.admin_panel_settings_outlined),
-            color: _NavBarTokens.brandBrown,
+            color: _NavBarTokens.brandRed,
             iconSize: 22,
             tooltip: '後台管理',
             splashRadius: 20,
@@ -338,7 +334,7 @@ class _LoginTextButton extends StatelessWidget {
     return TextButton(
       onPressed: () => context.go(AppRoutes.login),
       style: TextButton.styleFrom(
-        foregroundColor: _NavBarTokens.brandBrown,
+        foregroundColor: _NavBarTokens.brandRed,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         minimumSize: const Size(44, _NavBarTokens.iconButtonSize),
         textStyle: const TextStyle(
@@ -378,7 +374,7 @@ class _UserAvatar extends StatelessWidget {
         child: Center(
           child: CircleAvatar(
             radius: _NavBarTokens.avatarRadius,
-            backgroundColor: _NavBarTokens.brandBrown,
+            backgroundColor: _NavBarTokens.brandRed,
             backgroundImage:
                 photoUrl != null ? NetworkImage(photoUrl!) : null,
             child: photoUrl == null

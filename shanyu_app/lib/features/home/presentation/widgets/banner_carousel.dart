@@ -21,8 +21,8 @@ abstract final class _BannerTokens {
   static const indicatorActiveColor = Colors.white;
   static const indicatorInactiveColor = Color(0x66FFFFFF);
 
-  static const placeholderGradientStart = Color(0xFF5C4033);
-  static const placeholderGradientEnd = Color(0xFF8D6E63);
+  static const placeholderGradientStart = Color(0xFFB82020);
+  static const placeholderGradientEnd = Color(0xFF9C1B1B);
 
   static const shimmerBase = Color(0xFFEEEEEE);
   static const shimmerHighlight = Color(0xFFF5F5F5);

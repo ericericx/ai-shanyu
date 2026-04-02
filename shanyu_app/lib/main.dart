@@ -34,7 +34,7 @@ class ShanYuApp extends ConsumerWidget {
       title: config.appDisplayName,
       debugShowCheckedModeBanner: config.isDevelopment,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF5C4033)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFB82020)),
         useMaterial3: true,
       ),
       routerConfig: router,

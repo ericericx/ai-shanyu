@@ -10,8 +10,8 @@ import 'widgets/product_timeline.dart';
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
 abstract final class _HomeTokens {
-  static const brandBrown = Color(0xFF5C4033);
-  static const brandBrownLight = Color(0xFF8D6E63);
+  static const brandRed = Color(0xFFB82020);
+  static const brandRedDark = Color(0xFF9C1B1B);
   static const surface = Color(0xFFFAF7F4);
   static const textPrimary = Color(0xFF2D2118);
   static const textSecondary = Color(0xFF6D4C41);
@@ -126,7 +126,7 @@ class _ProductTimelineSection extends StatelessWidget {
                     width: 4,
                     height: 22,
                     decoration: BoxDecoration(
-                      color: _HomeTokens.brandBrown,
+                      color: _HomeTokens.brandRed,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
