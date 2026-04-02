@@ -19,11 +19,11 @@ abstract final class _TimelineTokens {
   /// 月份刻度列高度
   static const double axisHeight = 32.0;
 
-  /// 採收期圓點半徑
-  static const double harvestDotRadius = 7.0;
+  /// 生長期色條高度
+  static const double growingBarHeight = 6.0;
 
-  /// 生長期圓點半徑
-  static const double growingDotRadius = 4.5;
+  /// 採收期色條高度
+  static const double harvestBarHeight = 10.0;
 
   /// 生長期顏色
   static const Color growingColor = Color(0xFF81C784);
@@ -52,16 +52,11 @@ const List<String> _monthLabels = [
   '7', '8', '9', '10', '11', '12',
 ];
 
-// ── 旬期狀態 ──────────────────────────────────────────────────────────────────
-
-enum _PeriodState { none, growing, harvest }
-
 // ── 主元件 ────────────────────────────────────────────────────────────────────
 
 /// 農產時程元件。
 ///
-/// 12 個月完整顯示，每月細分上/中/下旬（共 36 旬）。
-/// 生長期以小綠點，採收期以大橙點標示。
+/// 12 個月完整顯示，以色條標示生長期（綠）與採收期（橙）。
 class ProductTimeline extends ConsumerWidget {
   const ProductTimeline({super.key});
 
@@ -89,7 +84,6 @@ class _TimelineContent extends StatelessWidget {
     if (products.isEmpty) return const _TimelineEmpty();
 
     final now = DateTime.now();
-    // 當前旬 period（1–36）
     final currentPeriod = PeriodHelper.toPeriod(
       now.month,
       now.day <= 10 ? 1 : now.day <= 20 ? 2 : 3,
@@ -102,10 +96,9 @@ class _TimelineContent extends StatelessWidget {
         const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
-            // 每旬格寬 = (可用寬 - 名稱欄) / 36
             final totalAxisWidth =
                 constraints.maxWidth - _TimelineTokens.labelWidth;
-            final periodWidth = totalAxisWidth / 36;
+            final periodWidth = totalAxisWidth / PeriodHelper.total;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -205,24 +198,40 @@ class _ProductRow extends StatefulWidget {
 class _ProductRowState extends State<_ProductRow> {
   bool _isHovered = false;
 
-  _PeriodState _stateFor(int period) {
-    if (PeriodHelper.inRange(
-      widget.product.harvestStartPeriod,
-      widget.product.harvestEndPeriod,
-      period,
-    )) return _PeriodState.harvest;
+  List<Widget> _buildBars(int start, int end, Color color, double barH) {
+    if (start <= 0 || end <= 0) return const [];
+    final pw = widget.periodWidth;
+    if (start <= end) {
+      return [_barSegment(start, end, color, barH, pw)];
+    }
+    // 跨年：拆成兩段
+    return [
+      _barSegment(start, PeriodHelper.total, color, barH, pw),
+      _barSegment(1, end, color, barH, pw),
+    ];
+  }
 
-    if (PeriodHelper.inRange(
-      widget.product.growingStartPeriod,
-      widget.product.growingEndPeriod,
-      period,
-    )) return _PeriodState.growing;
-
-    return _PeriodState.none;
+  Widget _barSegment(
+      int start, int end, Color color, double barH, double pw) {
+    return Positioned(
+      left: (start - 1) * pw,
+      top: (_TimelineTokens.rowHeight - barH) / 2,
+      width: (end - start + 1) * pw,
+      height: barH,
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(barH / 2),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final pw = widget.periodWidth;
+    final axisWidth = pw * PeriodHelper.total;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -231,8 +240,14 @@ class _ProductRowState extends State<_ProductRow> {
         onTap: () => context.go('/products/${widget.product.categoryId}'),
         child: Container(
           height: _TimelineTokens.rowHeight,
-          color:
-              _isHovered ? _TimelineTokens.hoverColor : Colors.transparent,
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? _TimelineTokens.hoverColor
+                : Colors.transparent,
+            border: const Border(
+              bottom: BorderSide(color: _TimelineTokens.dividerColor),
+            ),
+          ),
           child: Row(
             children: [
               // 名稱
@@ -251,62 +266,42 @@ class _ProductRowState extends State<_ProductRow> {
                   ),
                 ),
               ),
-              // 36 旬格
-              ...List.generate(PeriodHelper.total, (i) {
-                final period = i + 1;
-                final state = _stateFor(period);
-                final isCurrent = period == widget.currentPeriod;
-
-                return Container(
-                  width: widget.periodWidth,
-                  height: _TimelineTokens.rowHeight,
-                  color: isCurrent
-                      ? _TimelineTokens.currentPeriodBg
-                      : Colors.transparent,
-                  alignment: Alignment.center,
-                  child: _PeriodDot(state: state),
-                );
-              }),
+              // 色條軌道
+              SizedBox(
+                width: axisWidth,
+                height: _TimelineTokens.rowHeight,
+                child: Stack(
+                  children: [
+                    // 當前旬背景
+                    Positioned(
+                      left: (widget.currentPeriod - 1) * pw,
+                      top: 0,
+                      width: pw,
+                      height: _TimelineTokens.rowHeight,
+                      child: Container(
+                          color: _TimelineTokens.currentPeriodBg),
+                    ),
+                    // 生長期色條
+                    ..._buildBars(
+                      widget.product.growingStartPeriod,
+                      widget.product.growingEndPeriod,
+                      _TimelineTokens.growingColor,
+                      _TimelineTokens.growingBarHeight,
+                    ),
+                    // 採收期色條
+                    ..._buildBars(
+                      widget.product.harvestStartPeriod,
+                      widget.product.harvestEndPeriod,
+                      _TimelineTokens.harvestColor,
+                      _TimelineTokens.harvestBarHeight,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-// ── 旬期圓點 ──────────────────────────────────────────────────────────────────
-
-class _PeriodDot extends StatelessWidget {
-  const _PeriodDot({required this.state});
-
-  final _PeriodState state;
-
-  @override
-  Widget build(BuildContext context) {
-    if (state == _PeriodState.none) {
-      return Container(
-        width: 3,
-        height: 3,
-        decoration: const BoxDecoration(
-          color: Color(0xFFE0E0E0),
-          shape: BoxShape.circle,
-        ),
-      );
-    }
-
-    final isHarvest = state == _PeriodState.harvest;
-    final r = isHarvest
-        ? _TimelineTokens.harvestDotRadius
-        : _TimelineTokens.growingDotRadius;
-    final color = isHarvest
-        ? _TimelineTokens.harvestColor
-        : _TimelineTokens.growingColor;
-
-    return Container(
-      width: r * 2,
-      height: r * 2,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
@@ -322,12 +317,12 @@ class _Legend extends StatelessWidget {
       children: const [
         _LegendItem(
           color: _TimelineTokens.growingColor,
-          radius: _TimelineTokens.growingDotRadius,
+          barHeight: _TimelineTokens.growingBarHeight,
           label: '生長期',
         ),
         _LegendItem(
           color: _TimelineTokens.harvestColor,
-          radius: _TimelineTokens.harvestDotRadius,
+          barHeight: _TimelineTokens.harvestBarHeight,
           label: '採收期',
         ),
       ],
@@ -338,12 +333,12 @@ class _Legend extends StatelessWidget {
 class _LegendItem extends StatelessWidget {
   const _LegendItem({
     required this.color,
-    required this.radius,
+    required this.barHeight,
     required this.label,
   });
 
   final Color color;
-  final double radius;
+  final double barHeight;
   final String label;
 
   @override
@@ -352,9 +347,12 @@ class _LegendItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: radius * 2,
-          height: radius * 2,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          width: 20,
+          height: barHeight,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(barHeight / 2),
+          ),
         ),
         const SizedBox(width: 6),
         Text(
@@ -382,7 +380,8 @@ class _TimelineSkeleton extends StatelessWidget {
           _SkeletonBox(width: 60, height: 12),
         ]),
         const SizedBox(height: 12),
-        _SkeletonBox(width: double.infinity, height: _TimelineTokens.axisHeight),
+        _SkeletonBox(
+            width: double.infinity, height: _TimelineTokens.axisHeight),
         const SizedBox(height: 4),
         ...List.generate(
           5,
