@@ -7,8 +7,6 @@ import '../../features/admin/providers/admin_providers.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/cart/providers/cart_providers.dart';
 import '../../features/chat/providers/chat_providers.dart';
-import '../../features/products/models/category_model.dart';
-import '../../features/products/providers/product_providers.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
@@ -77,25 +75,6 @@ class AppNavBar extends ConsumerWidget implements PreferredSizeWidget {
 
               const Spacer(),
 
-              // ── 中段：桌機分類連結 ──
-              if (isDesktop) ...[
-                ref.watch(categoriesProvider).when(
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
-                  data: (categories) {
-                    final sorted = [...categories]
-                      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ...sorted.map((cat) => _NavCategoryLink(category: cat)),
-                        if (sorted.isNotEmpty) const SizedBox(width: 16),
-                      ],
-                    );
-                  },
-                ),
-              ],
-
               // ── 右側：Chat + 購物車 + 後台 + 使用者動作 ──
               _ChatButton(),
               const SizedBox(width: 4),
@@ -125,48 +104,6 @@ class _BrandLogo extends StatelessWidget {
           'assets/images/shanyu.avif',
           height: 36,
           fit: BoxFit.contain,
-        ),
-      ),
-    );
-  }
-}
-
-// ── 分類導覽連結 ──────────────────────────────────────────────────────────────
-
-class _NavCategoryLink extends StatefulWidget {
-  const _NavCategoryLink({required this.category});
-
-  final CategoryModel category;
-
-  @override
-  State<_NavCategoryLink> createState() => _NavCategoryLinkState();
-}
-
-class _NavCategoryLinkState extends State<_NavCategoryLink> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () => context.go('/products/${widget.category.id}'),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 150),
-            curve: Curves.easeOut,
-            style: TextStyle(
-              fontSize: _NavBarTokens.navLinkFontSize,
-              fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
-              color: _isHovered
-                  ? _NavBarTokens.navLinkHoverColor
-                  : _NavBarTokens.navLinkColor,
-            ),
-            child: Text(widget.category.name),
-          ),
         ),
       ),
     );
