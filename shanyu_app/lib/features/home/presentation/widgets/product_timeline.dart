@@ -147,7 +147,7 @@ class _TimelineBody extends StatelessWidget {
     return Stack(
       children: [
         Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // X 軸月份刻度
             _MonthAxis(
@@ -273,7 +273,8 @@ class _ProductRowState extends State<_ProductRow> {
                 ),
               ),
               // 時程條
-              Expanded(
+              SizedBox(
+                width: widget.axisWidth,
                 child: _TimelineBars(
                   product: widget.product,
                   axisWidth: widget.axisWidth,

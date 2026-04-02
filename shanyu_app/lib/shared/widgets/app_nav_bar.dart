@@ -101,7 +101,7 @@ class _BrandLogo extends StatelessWidget {
       child: GestureDetector(
         onTap: () => context.go(AppRoutes.home),
         child: Image.asset(
-          'assets/images/shanyu.avif',
+          'assets/images/shanyu.png',
           height: 36,
           fit: BoxFit.contain,
         ),
