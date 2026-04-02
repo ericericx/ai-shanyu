@@ -91,6 +91,13 @@ class _TimelineContent extends StatelessWidget {
 
     final currentMonth = DateTime.now().month;
 
+    // MediaQuery 拿到有限螢幕寬（不在 ScrollView 內量，避免 infinity）
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final axisWidth = math.max(
+      _TimelineTokens.minAxisWidth,
+      screenWidth - _TimelineTokens.labelWidth - 48,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -98,25 +105,12 @@ class _TimelineContent extends StatelessWidget {
         const SizedBox(height: 8),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: _TimelineTokens.labelWidth + _TimelineTokens.minAxisWidth,
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final axisWidth = math.max(
-                  _TimelineTokens.minAxisWidth,
-                  constraints.maxWidth - _TimelineTokens.labelWidth,
-                );
-                return SizedBox(
-                  width: _TimelineTokens.labelWidth + axisWidth,
-                  child: _TimelineBody(
-                    products: products,
-                    currentMonth: currentMonth,
-                    axisWidth: axisWidth,
-                  ),
-                );
-              },
+          child: SizedBox(
+            width: _TimelineTokens.labelWidth + axisWidth,
+            child: _TimelineBody(
+              products: products,
+              currentMonth: currentMonth,
+              axisWidth: axisWidth,
             ),
           ),
         ),
@@ -394,7 +388,6 @@ class _DashedVerticalLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      size: const Size(1, double.infinity),
       painter: _DashedLinePainter(color: color),
     );
   }
