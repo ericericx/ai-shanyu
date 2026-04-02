@@ -55,8 +55,13 @@ class _HomeBody extends ConsumerWidget {
           // 分類頁籤列
           const CategoryTabBar(),
 
-          // Banner 輪播
-          const BannerCarousel(),
+          // Banner 輪播（最大寬 1440px，超過時自動置中留邊）
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1440),
+              child: const BannerCarousel(),
+            ),
+          ),
 
           const SizedBox(height: _HomeTokens.sectionGap),
 
