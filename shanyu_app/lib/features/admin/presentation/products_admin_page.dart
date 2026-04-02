@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../products/models/category_model.dart';
 import '../../products/models/product_models.dart';
+import '../../home/models/product_timeline_models.dart';
 import '../data/products_admin_repository.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
@@ -607,10 +608,10 @@ class _ProductTab extends ConsumerWidget {
         onSave: (gs, ge, hs, he) async {
           await ref.read(_repoProvider).updateProductSeasons(
                 product.id,
-                growingStartMonth: gs,
-                growingEndMonth: ge,
-                harvestStartMonth: hs,
-                harvestEndMonth: he,
+                growingStartPeriod: gs,
+                growingEndPeriod: ge,
+                harvestStartPeriod: hs,
+                harvestEndPeriod: he,
               );
         },
       ),
@@ -1307,20 +1308,21 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
   late int _he;
   bool _isSaving = false;
 
-  static const _months = [
+  static final _periods = [
     (0, '未設定'),
-    (1, '1月'), (2, '2月'), (3, '3月'), (4, '4月'),
-    (5, '5月'), (6, '6月'), (7, '7月'), (8, '8月'),
-    (9, '9月'), (10, '10月'), (11, '11月'), (12, '12月'),
+    ...List.generate(36, (i) {
+      final period = i + 1;
+      return (period, PeriodHelper.label(period));
+    }),
   ];
 
   @override
   void initState() {
     super.initState();
-    _gs = widget.product.growingStartMonth ?? 0;
-    _ge = widget.product.growingEndMonth ?? 0;
-    _hs = widget.product.harvestStartMonth ?? 0;
-    _he = widget.product.harvestEndMonth ?? 0;
+    _gs = widget.product.growingStartPeriod ?? 0;
+    _ge = widget.product.growingEndPeriod ?? 0;
+    _hs = widget.product.harvestStartPeriod ?? 0;
+    _he = widget.product.harvestEndPeriod ?? 0;
   }
 
   Future<void> _handleSave() async {
@@ -1339,12 +1341,12 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
     }
   }
 
-  Widget _monthDropdown(int value, ValueChanged<int?> onChanged) {
+  Widget _periodDropdown(int value, ValueChanged<int?> onChanged) {
     return DropdownButton<int>(
       value: value,
       isExpanded: true,
-      items: _months
-          .map((m) => DropdownMenuItem(value: m.$1, child: Text(m.$2)))
+      items: _periods
+          .map((p) => DropdownMenuItem(value: p.$1, child: Text(p.$2)))
           .toList(),
       onChanged: onChanged,
     );
@@ -1384,7 +1386,7 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('起始月', style: TextStyle(fontSize: 11, color: _Tokens.textSecondary)),
-                  _monthDropdown(_gs, (v) => setState(() => _gs = v ?? 0)),
+                  _periodDropdown(_gs, (v) => setState(() => _gs = v ?? 0)),
                 ],
               )),
               const Padding(
@@ -1395,7 +1397,7 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('結束月', style: TextStyle(fontSize: 11, color: _Tokens.textSecondary)),
-                  _monthDropdown(_ge, (v) => setState(() => _ge = v ?? 0)),
+                  _periodDropdown(_ge, (v) => setState(() => _ge = v ?? 0)),
                 ],
               )),
             ]),
@@ -1415,7 +1417,7 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('起始月', style: TextStyle(fontSize: 11, color: _Tokens.textSecondary)),
-                  _monthDropdown(_hs, (v) => setState(() => _hs = v ?? 0)),
+                  _periodDropdown(_hs, (v) => setState(() => _hs = v ?? 0)),
                 ],
               )),
               const Padding(
@@ -1426,7 +1428,7 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('結束月', style: TextStyle(fontSize: 11, color: _Tokens.textSecondary)),
-                  _monthDropdown(_he, (v) => setState(() => _he = v ?? 0)),
+                  _periodDropdown(_he, (v) => setState(() => _he = v ?? 0)),
                 ],
               )),
             ]),
