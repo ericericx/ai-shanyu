@@ -1,7 +1,5 @@
 // lib/features/home/presentation/widgets/product_timeline.dart
 
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,44 +10,41 @@ import '../../providers/product_timeline_providers.dart';
 // ── 設計常數 ──────────────────────────────────────────────────────────────────
 
 abstract final class _TimelineTokens {
-  /// 農產品名稱欄寬度
-  static const double labelWidth = 80.0;
+  /// 農產品名稱欄寬度（固定）
+  static const double labelWidth = 72.0;
 
   /// 每列農產品的高度
-  static const double rowHeight = 44.0;
+  static const double rowHeight = 48.0;
 
   /// 月份刻度列高度
-  static const double axisHeight = 32.0;
+  static const double axisHeight = 28.0;
 
-  /// 時間條高度
-  static const double barHeight = 12.0;
+  /// 採收期圓點半徑
+  static const double harvestDotRadius = 10.0;
 
-  /// 時間條圓角
-  static const double barRadius = 6.0;
-
-  /// 最小軸寬（確保手機可捲動）
-  static const double minAxisWidth = 480.0;
+  /// 生長期圓點半徑（稍小）
+  static const double growingDotRadius = 6.0;
 
   /// 生長期顏色
-  static const Color growingColor = Color(0xFFA5D6A7);
+  static const Color growingColor = Color(0xFF81C784);
 
   /// 採收期顏色
-  static const Color harvestColor = Color(0xFFFF8A65);
+  static const Color harvestColor = Color(0xFFFF7043);
 
-  /// 當前月份線顏色
-  static const Color currentMonthColor = Color(0xFFB82020);
-
-  /// 月份刻度文字色
-  static const Color axisTextColor = Color(0xFF757575);
+  /// 當前月份背景色
+  static const Color currentMonthBg = Color(0x14B82020);
 
   /// 當前月份文字色
   static const Color currentMonthTextColor = Color(0xFFB82020);
 
+  /// 月份刻度文字色
+  static const Color axisTextColor = Color(0xFF9E9E9E);
+
   /// 列分隔線色
-  static const Color dividerColor = Color(0xFFEEEEEE);
+  static const Color dividerColor = Color(0xFFF0F0F0);
 
   /// hover 背景
-  static const Color hoverColor = Color(0x0AB82020);
+  static const Color hoverColor = Color(0x08B82020);
 }
 
 const List<String> _monthLabels = [
@@ -57,12 +52,16 @@ const List<String> _monthLabels = [
   '7', '8', '9', '10', '11', '12',
 ];
 
+// ── 月份狀態 ──────────────────────────────────────────────────────────────────
+
+enum _MonthState { none, growing, harvest }
+
 // ── 主元件 ────────────────────────────────────────────────────────────────────
 
-/// 線性農產時程元件。
+/// 農產時程元件。
 ///
-/// 以水平時程軸呈現每個農產品的生長期與採收期。
-/// X 軸為 1–12 月，每列農產品顯示連續色條，當前月份以垂直虛線標示。
+/// 12 個月完整顯示於畫面內（無橫向捲動）。
+/// 生長期以小綠點標示，採收期以大橙點標示，當前月份欄位背景高亮。
 class ProductTimeline extends ConsumerWidget {
   const ProductTimeline({super.key});
 
@@ -91,100 +90,50 @@ class _TimelineContent extends StatelessWidget {
 
     final currentMonth = DateTime.now().month;
 
-    // MediaQuery 拿到有限螢幕寬（不在 ScrollView 內量，避免 infinity）
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final axisWidth = math.max(
-      _TimelineTokens.minAxisWidth,
-      screenWidth - _TimelineTokens.labelWidth - 48,
-    );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _Legend(),
-        const SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: _TimelineTokens.labelWidth + axisWidth,
-            child: _TimelineBody(
-              products: products,
-              currentMonth: currentMonth,
-              axisWidth: axisWidth,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── 時程軸主體 ────────────────────────────────────────────────────────────────
-
-class _TimelineBody extends StatelessWidget {
-  const _TimelineBody({
-    required this.products,
-    required this.currentMonth,
-    required this.axisWidth,
-  });
-
-  final List<TimelineProduct> products;
-  final int currentMonth;
-  final double axisWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    // 當前月份的 X 軸位置（月份中心點）
-    final currentMonthX = _TimelineTokens.labelWidth +
-        ((currentMonth - 0.5) / 12) * axisWidth;
-
-    return Stack(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // X 軸月份刻度
-            _MonthAxis(
-              axisWidth: axisWidth,
-              currentMonth: currentMonth,
-            ),
-            // 農產品列
-            ...products.map((product) => _ProductRow(
-                  product: product,
+        const SizedBox(height: 12),
+        // LayoutBuilder 安全：此 Column 的父層有有限寬度
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cellWidth =
+                (constraints.maxWidth - _TimelineTokens.labelWidth) / 12;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _MonthAxis(
+                  cellWidth: cellWidth,
                   currentMonth: currentMonth,
-                  axisWidth: axisWidth,
-                )),
-          ],
-        ),
-        // 當前月份垂直虛線（疊在所有列上）
-        Positioned(
-          top: _TimelineTokens.axisHeight,
-          bottom: 0,
-          left: currentMonthX,
-          child: _DashedVerticalLine(
-            color: _TimelineTokens.currentMonthColor,
-          ),
+                ),
+                ...products.map((product) => _ProductRow(
+                      product: product,
+                      currentMonth: currentMonth,
+                      cellWidth: cellWidth,
+                    )),
+              ],
+            );
+          },
         ),
       ],
     );
   }
 }
 
-// ── X 軸月份刻度 ──────────────────────────────────────────────────────────────
+// ── 月份刻度 ──────────────────────────────────────────────────────────────────
 
 class _MonthAxis extends StatelessWidget {
   const _MonthAxis({
-    required this.axisWidth,
+    required this.cellWidth,
     required this.currentMonth,
   });
 
-  final double axisWidth;
+  final double cellWidth;
   final int currentMonth;
 
   @override
   Widget build(BuildContext context) {
-    final cellWidth = axisWidth / 12;
-
     return SizedBox(
       height: _TimelineTokens.axisHeight,
       child: Row(
@@ -193,19 +142,29 @@ class _MonthAxis extends StatelessWidget {
           ...List.generate(12, (i) {
             final month = i + 1;
             final isCurrent = month == currentMonth;
-            return SizedBox(
+            return Container(
               width: cellWidth,
-              child: Center(
-                child: Text(
-                  _monthLabels[i],
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight:
-                        isCurrent ? FontWeight.w800 : FontWeight.w400,
-                    color: isCurrent
-                        ? _TimelineTokens.currentMonthTextColor
-                        : _TimelineTokens.axisTextColor,
-                  ),
+              alignment: Alignment.center,
+              decoration: isCurrent
+                  ? const BoxDecoration(
+                      color: _TimelineTokens.currentMonthBg,
+                      border: Border(
+                        bottom: BorderSide(
+                          color: _TimelineTokens.currentMonthTextColor,
+                          width: 2,
+                        ),
+                      ),
+                    )
+                  : null,
+              child: Text(
+                _monthLabels[i],
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight:
+                      isCurrent ? FontWeight.w700 : FontWeight.w400,
+                  color: isCurrent
+                      ? _TimelineTokens.currentMonthTextColor
+                      : _TimelineTokens.axisTextColor,
                 ),
               ),
             );
@@ -222,12 +181,12 @@ class _ProductRow extends StatefulWidget {
   const _ProductRow({
     required this.product,
     required this.currentMonth,
-    required this.axisWidth,
+    required this.cellWidth,
   });
 
   final TimelineProduct product;
   final int currentMonth;
-  final double axisWidth;
+  final double cellWidth;
 
   @override
   State<_ProductRow> createState() => _ProductRowState();
@@ -235,6 +194,29 @@ class _ProductRow extends StatefulWidget {
 
 class _ProductRowState extends State<_ProductRow> {
   bool _isHovered = false;
+
+  bool _inRange(int start, int end, int month) {
+    if (start <= end) return month >= start && month <= end;
+    return month >= start || month <= end;
+  }
+
+  _MonthState _stateFor(int month) {
+    final isHarvest = _inRange(
+      widget.product.harvestStartMonth,
+      widget.product.harvestEndMonth,
+      month,
+    );
+    if (isHarvest) return _MonthState.harvest;
+
+    final isGrowing = _inRange(
+      widget.product.growingStartMonth,
+      widget.product.growingEndMonth,
+      month,
+    );
+    if (isGrowing) return _MonthState.growing;
+
+    return _MonthState.none;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -244,8 +226,7 @@ class _ProductRowState extends State<_ProductRow> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: () => context.go('/products/${widget.product.categoryId}'),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
+        child: Container(
           height: _TimelineTokens.rowHeight,
           color: _isHovered ? _TimelineTokens.hoverColor : Colors.transparent,
           child: Row(
@@ -254,26 +235,34 @@ class _ProductRowState extends State<_ProductRow> {
               SizedBox(
                 width: _TimelineTokens.labelWidth,
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 4, right: 8),
+                  padding: const EdgeInsets.only(right: 8),
                   child: Text(
                     widget.product.name,
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF333333),
+                      color: Color(0xFF424242),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
-              // 時程條
-              SizedBox(
-                width: widget.axisWidth,
-                child: _TimelineBars(
-                  product: widget.product,
-                  axisWidth: widget.axisWidth,
-                ),
-              ),
+              // 12 個月份圓點
+              ...List.generate(12, (i) {
+                final month = i + 1;
+                final state = _stateFor(month);
+                final isCurrent = month == widget.currentMonth;
+
+                return Container(
+                  width: widget.cellWidth,
+                  height: _TimelineTokens.rowHeight,
+                  color: isCurrent
+                      ? _TimelineTokens.currentMonthBg
+                      : Colors.transparent,
+                  alignment: Alignment.center,
+                  child: _MonthDot(state: state),
+                );
+              }),
             ],
           ),
         ),
@@ -282,139 +271,41 @@ class _ProductRowState extends State<_ProductRow> {
   }
 }
 
-// ── 時程色條 ──────────────────────────────────────────────────────────────────
+// ── 月份圓點 ──────────────────────────────────────────────────────────────────
 
-class _TimelineBars extends StatelessWidget {
-  const _TimelineBars({required this.product, required this.axisWidth});
+class _MonthDot extends StatelessWidget {
+  const _MonthDot({required this.state});
 
-  final TimelineProduct product;
-  final double axisWidth;
+  final _MonthState state;
 
-  /// 將月份範圍轉換為 (left, width) 的百分比 segments。
-  /// 跨年情況（start > end）拆為兩段。
-  List<({double left, double width})> _segments(int start, int end) {
-    if (start <= end) {
-      return [
-        (
-          left: (start - 1) / 12 * axisWidth,
-          width: (end - start + 1) / 12 * axisWidth,
-        )
-      ];
+  @override
+  Widget build(BuildContext context) {
+    if (state == _MonthState.none) {
+      // 空月：細點線佔位
+      return Container(
+        width: 4,
+        height: 4,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE0E0E0),
+          shape: BoxShape.circle,
+        ),
+      );
     }
-    // 跨年：前段 start→12，後段 1→end
-    return [
-      (
-        left: (start - 1) / 12 * axisWidth,
-        width: (12 - start + 1) / 12 * axisWidth,
-      ),
-      (
-        left: 0.0,
-        width: end / 12 * axisWidth,
-      ),
-    ];
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    final growingSegs = _segments(
-      product.growingStartMonth,
-      product.growingEndMonth,
-    );
-    final harvestSegs = _segments(
-      product.harvestStartMonth,
-      product.harvestEndMonth,
-    );
+    final isHarvest = state == _MonthState.harvest;
+    final radius =
+        isHarvest ? _TimelineTokens.harvestDotRadius : _TimelineTokens.growingDotRadius;
+    final color = isHarvest ? _TimelineTokens.harvestColor : _TimelineTokens.growingColor;
 
-    return SizedBox(
-      width: axisWidth,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // 列底部分隔線
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: const Divider(
-              height: 1,
-              color: _TimelineTokens.dividerColor,
-            ),
-          ),
-          // 生長期色條（淺綠）
-          ...growingSegs.map((seg) => Positioned(
-                left: seg.left,
-                width: seg.width,
-                top: (_TimelineTokens.rowHeight - _TimelineTokens.barHeight) / 2,
-                height: _TimelineTokens.barHeight,
-                child: _Bar(color: _TimelineTokens.growingColor),
-              )),
-          // 採收期色條（深橘，疊上層）
-          ...harvestSegs.map((seg) => Positioned(
-                left: seg.left,
-                width: seg.width,
-                top: (_TimelineTokens.rowHeight - _TimelineTokens.barHeight) / 2,
-                height: _TimelineTokens.barHeight,
-                child: _Bar(color: _TimelineTokens.harvestColor),
-              )),
-        ],
-      ),
-    );
-  }
-}
-
-class _Bar extends StatelessWidget {
-  const _Bar({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
+      width: radius * 2,
+      height: radius * 2,
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(_TimelineTokens.barRadius),
+        shape: BoxShape.circle,
       ),
     );
   }
-}
-
-// ── 當前月份垂直虛線 ──────────────────────────────────────────────────────────
-
-class _DashedVerticalLine extends StatelessWidget {
-  const _DashedVerticalLine({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _DashedLinePainter(color: color),
-    );
-  }
-}
-
-class _DashedLinePainter extends CustomPainter {
-  const _DashedLinePainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const dashHeight = 4.0;
-    const dashSpace = 3.0;
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.5;
-
-    double y = 0;
-    while (y < size.height) {
-      canvas.drawLine(Offset(0, y), Offset(0, y + dashHeight), paint);
-      y += dashHeight + dashSpace;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedLinePainter old) => old.color != color;
 }
 
 // ── 圖例 ──────────────────────────────────────────────────────────────────────
@@ -423,19 +314,33 @@ class _Legend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 16,
+      spacing: 20,
+      runSpacing: 8,
       children: const [
-        _LegendItem(color: _TimelineTokens.growingColor, label: '生長期'),
-        _LegendItem(color: _TimelineTokens.harvestColor, label: '採收期'),
+        _LegendItem(
+          color: _TimelineTokens.growingColor,
+          radius: _TimelineTokens.growingDotRadius,
+          label: '生長期',
+        ),
+        _LegendItem(
+          color: _TimelineTokens.harvestColor,
+          radius: _TimelineTokens.harvestDotRadius,
+          label: '採收期',
+        ),
       ],
     );
   }
 }
 
 class _LegendItem extends StatelessWidget {
-  const _LegendItem({required this.color, required this.label});
+  const _LegendItem({
+    required this.color,
+    required this.radius,
+    required this.label,
+  });
 
   final Color color;
+  final double radius;
   final String label;
 
   @override
@@ -444,17 +349,14 @@ class _LegendItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 24,
-          height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(5),
-          ),
+          width: radius * 2,
+          height: radius * 2,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF555555)),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF616161)),
         ),
       ],
     );
@@ -471,19 +373,14 @@ class _TimelineSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 圖例骨架
-        Row(
-          children: [
-            _SkeletonBox(width: 70, height: 10),
-            const SizedBox(width: 16),
-            _SkeletonBox(width: 70, height: 10),
-          ],
-        ),
+        Row(children: [
+          _SkeletonBox(width: 60, height: 12),
+          const SizedBox(width: 16),
+          _SkeletonBox(width: 60, height: 12),
+        ]),
         const SizedBox(height: 12),
-        // 軸骨架
         _SkeletonBox(width: double.infinity, height: _TimelineTokens.axisHeight),
         const SizedBox(height: 4),
-        // 列骨架
         ...List.generate(
           5,
           (_) => Padding(
