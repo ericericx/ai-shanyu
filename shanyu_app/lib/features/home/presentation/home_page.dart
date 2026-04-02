@@ -5,6 +5,7 @@ import '../../../shared/widgets/app_nav_bar.dart';
 import '../providers/cms_providers.dart';
 import 'widgets/banner_carousel.dart';
 import 'widgets/brand_story_section.dart';
+import 'widgets/category_tab_bar.dart';
 import 'widgets/product_timeline.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
@@ -51,6 +52,9 @@ class _HomeBody extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 分類頁籤列
+          const CategoryTabBar(),
+
           // Banner 輪播
           const BannerCarousel(),
 
