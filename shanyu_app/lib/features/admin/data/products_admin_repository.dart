@@ -79,6 +79,10 @@ class AdminProductModel {
     this.minPrice,
     this.scheduledAt,
     this.seasonalMonths,
+    this.growingStartMonth = 0,
+    this.growingEndMonth = 0,
+    this.harvestStartMonth = 0,
+    this.harvestEndMonth = 0,
   });
 
   final String id;
@@ -100,6 +104,18 @@ class AdminProductModel {
   /// 季節性月份，例如 [6, 7, 8] 代表夏季
   final List<int>? seasonalMonths;
 
+  /// 生長期起始月（1–12，0 表示未設定）
+  final int growingStartMonth;
+
+  /// 生長期結束月（1–12，0 表示未設定）
+  final int growingEndMonth;
+
+  /// 採收期起始月（1–12，0 表示未設定）
+  final int harvestStartMonth;
+
+  /// 採收期結束月（1–12，0 表示未設定）
+  final int harvestEndMonth;
+
   factory AdminProductModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     final scheduledAtTs = data['scheduledAt'] as Timestamp?;
@@ -116,6 +132,10 @@ class AdminProductModel {
       minPrice: data['minPrice'] as int?,
       scheduledAt: scheduledAtTs?.toDate(),
       seasonalMonths: rawMonths?.map((e) => e as int).toList(),
+      growingStartMonth: (data['growingStartMonth'] as int?) ?? 0,
+      growingEndMonth: (data['growingEndMonth'] as int?) ?? 0,
+      harvestStartMonth: (data['harvestStartMonth'] as int?) ?? 0,
+      harvestEndMonth: (data['harvestEndMonth'] as int?) ?? 0,
     );
   }
 }
@@ -239,5 +259,22 @@ class ProductsAdminRepository {
     }
 
     await _firestore.collection(_kProducts).doc(id).update(payload);
+  }
+
+  /// 更新商品的生長期與採收期月份。
+  Future<void> updateProductSeasons(
+    String id, {
+    required int growingStartMonth,
+    required int growingEndMonth,
+    required int harvestStartMonth,
+    required int harvestEndMonth,
+  }) async {
+    await _firestore.collection(_kProducts).doc(id).update({
+      'growingStartMonth': growingStartMonth,
+      'growingEndMonth': growingEndMonth,
+      'harvestStartMonth': harvestStartMonth,
+      'harvestEndMonth': harvestEndMonth,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 }

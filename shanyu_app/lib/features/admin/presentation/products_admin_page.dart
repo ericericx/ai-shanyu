@@ -552,6 +552,11 @@ class _ProductTab extends ConsumerWidget {
                         ref,
                         product,
                       ),
+                      onEditSeasons: () => _showEditSeasonsDialog(
+                        context,
+                        ref,
+                        product,
+                      ),
                     );
                   },
                 );
@@ -584,6 +589,28 @@ class _ProductTab extends ConsumerWidget {
                   sortOrder: data['sortOrder'] as int,
                   isPreorder: false,
                 ),
+              );
+        },
+      ),
+    );
+  }
+
+  void _showEditSeasonsDialog(
+    BuildContext context,
+    WidgetRef ref,
+    AdminProductModel product,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => _EditSeasonsDialog(
+        product: product,
+        onSave: (gs, ge, hs, he) async {
+          await ref.read(_repoProvider).updateProductSeasons(
+                product.id,
+                growingStartMonth: gs,
+                growingEndMonth: ge,
+                harvestStartMonth: hs,
+                harvestEndMonth: he,
               );
         },
       ),
@@ -698,11 +725,13 @@ class _ProductCard extends StatelessWidget {
     required this.product,
     required this.categoryName,
     required this.onEditStatus,
+    required this.onEditSeasons,
   });
 
   final AdminProductModel product;
   final String categoryName;
   final VoidCallback onEditStatus;
+  final VoidCallback onEditSeasons;
 
   @override
   Widget build(BuildContext context) {
@@ -789,18 +818,37 @@ class _ProductCard extends StatelessWidget {
             ),
 
             // 操作按鈕
-            TextButton.icon(
-              onPressed: onEditStatus,
-              icon: const Icon(Icons.tune, size: 16),
-              label: const Text('編輯狀態'),
-              style: TextButton.styleFrom(
-                foregroundColor: _Tokens.brandBrown,
-                textStyle: const TextStyle(fontSize: 12),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: onEditStatus,
+                  icon: const Icon(Icons.tune, size: 16),
+                  label: const Text('編輯狀態'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: _Tokens.brandBrown,
+                    textStyle: const TextStyle(fontSize: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                  ),
                 ),
-              ),
+                TextButton.icon(
+                  onPressed: onEditSeasons,
+                  icon: const Icon(Icons.calendar_month_outlined, size: 16),
+                  label: const Text('農產時程'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: _Tokens.brandBrown,
+                    textStyle: const TextStyle(fontSize: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1234,6 +1282,177 @@ class _CreateProductDialogState extends State<_CreateProductDialog> {
                   ),
                 )
               : const Text('新增'),
+        ),
+      ],
+    );
+  }
+}
+
+// ── 編輯農產時程 Dialog ───────────────────────────────────────────────────────
+
+class _EditSeasonsDialog extends StatefulWidget {
+  const _EditSeasonsDialog({required this.product, required this.onSave});
+
+  final AdminProductModel product;
+  final Future<void> Function(int gs, int ge, int hs, int he) onSave;
+
+  @override
+  State<_EditSeasonsDialog> createState() => _EditSeasonsDialogState();
+}
+
+class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
+  late int _gs;
+  late int _ge;
+  late int _hs;
+  late int _he;
+  bool _isSaving = false;
+
+  static const _months = [
+    (0, '未設定'),
+    (1, '1月'), (2, '2月'), (3, '3月'), (4, '4月'),
+    (5, '5月'), (6, '6月'), (7, '7月'), (8, '8月'),
+    (9, '9月'), (10, '10月'), (11, '11月'), (12, '12月'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _gs = widget.product.growingStartMonth;
+    _ge = widget.product.growingEndMonth;
+    _hs = widget.product.harvestStartMonth;
+    _he = widget.product.harvestEndMonth;
+  }
+
+  Future<void> _handleSave() async {
+    setState(() => _isSaving = true);
+    try {
+      await widget.onSave(_gs, _ge, _hs, _he);
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新失敗：$e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Widget _monthDropdown(int value, ValueChanged<int?> onChanged) {
+    return DropdownButton<int>(
+      value: value,
+      isExpanded: true,
+      items: _months
+          .map((m) => DropdownMenuItem(value: m.$1, child: Text(m.$2)))
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: const Text('農產時程設定'),
+      content: SizedBox(
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.product.name,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: _Tokens.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 生長期
+            Row(children: [
+              Container(width: 10, height: 10,
+                decoration: const BoxDecoration(color: Color(0xFF81C784), shape: BoxShape.circle)),
+              const SizedBox(width: 6),
+              const Text('生長期', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('起始月', style: TextStyle(fontSize: 11, color: _Tokens.textSecondary)),
+                  _monthDropdown(_gs, (v) => setState(() => _gs = v ?? 0)),
+                ],
+              )),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text('至', style: TextStyle(color: _Tokens.textSecondary)),
+              ),
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('結束月', style: TextStyle(fontSize: 11, color: _Tokens.textSecondary)),
+                  _monthDropdown(_ge, (v) => setState(() => _ge = v ?? 0)),
+                ],
+              )),
+            ]),
+
+            const SizedBox(height: 20),
+
+            // 採收期
+            Row(children: [
+              Container(width: 10, height: 10,
+                decoration: const BoxDecoration(color: Color(0xFFFF7043), shape: BoxShape.circle)),
+              const SizedBox(width: 6),
+              const Text('採收期', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('起始月', style: TextStyle(fontSize: 11, color: _Tokens.textSecondary)),
+                  _monthDropdown(_hs, (v) => setState(() => _hs = v ?? 0)),
+                ],
+              )),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text('至', style: TextStyle(color: _Tokens.textSecondary)),
+              ),
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('結束月', style: TextStyle(fontSize: 11, color: _Tokens.textSecondary)),
+                  _monthDropdown(_he, (v) => setState(() => _he = v ?? 0)),
+                ],
+              )),
+            ]),
+
+            const SizedBox(height: 8),
+            const Text(
+              '跨年設定範例：採收期 11月 至 2月（會自動跨年計算）',
+              style: TextStyle(fontSize: 11, color: _Tokens.textSecondary),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: _isSaving ? null : _handleSave,
+          style: FilledButton.styleFrom(backgroundColor: _Tokens.brandBrown),
+          child: _isSaving
+              ? const SizedBox(
+                  width: 16, height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Text('儲存'),
         ),
       ],
     );
