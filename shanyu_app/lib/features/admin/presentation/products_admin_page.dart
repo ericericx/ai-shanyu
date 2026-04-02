@@ -1317,10 +1317,10 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
   @override
   void initState() {
     super.initState();
-    _gs = widget.product.growingStartMonth;
-    _ge = widget.product.growingEndMonth;
-    _hs = widget.product.harvestStartMonth;
-    _he = widget.product.harvestEndMonth;
+    _gs = widget.product.growingStartMonth ?? 0;
+    _ge = widget.product.growingEndMonth ?? 0;
+    _hs = widget.product.harvestStartMonth ?? 0;
+    _he = widget.product.harvestEndMonth ?? 0;
   }
 
   Future<void> _handleSave() async {

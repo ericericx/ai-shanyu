@@ -79,10 +79,10 @@ class AdminProductModel {
     this.minPrice,
     this.scheduledAt,
     this.seasonalMonths,
-    this.growingStartMonth = 0,
-    this.growingEndMonth = 0,
-    this.harvestStartMonth = 0,
-    this.harvestEndMonth = 0,
+    this.growingStartMonth,
+    this.growingEndMonth,
+    this.harvestStartMonth,
+    this.harvestEndMonth,
   });
 
   final String id;
@@ -104,17 +104,17 @@ class AdminProductModel {
   /// 季節性月份，例如 [6, 7, 8] 代表夏季
   final List<int>? seasonalMonths;
 
-  /// 生長期起始月（1–12，0 表示未設定）
-  final int growingStartMonth;
+  /// 生長期起始月（1–12，null 表示未設定）
+  final int? growingStartMonth;
 
-  /// 生長期結束月（1–12，0 表示未設定）
-  final int growingEndMonth;
+  /// 生長期結束月（1–12，null 表示未設定）
+  final int? growingEndMonth;
 
-  /// 採收期起始月（1–12，0 表示未設定）
-  final int harvestStartMonth;
+  /// 採收期起始月（1–12，null 表示未設定）
+  final int? harvestStartMonth;
 
-  /// 採收期結束月（1–12，0 表示未設定）
-  final int harvestEndMonth;
+  /// 採收期結束月（1–12，null 表示未設定）
+  final int? harvestEndMonth;
 
   factory AdminProductModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -132,10 +132,10 @@ class AdminProductModel {
       minPrice: data['minPrice'] as int?,
       scheduledAt: scheduledAtTs?.toDate(),
       seasonalMonths: rawMonths?.map((e) => e as int).toList(),
-      growingStartMonth: (data['growingStartMonth'] as int?) ?? 0,
-      growingEndMonth: (data['growingEndMonth'] as int?) ?? 0,
-      harvestStartMonth: (data['harvestStartMonth'] as int?) ?? 0,
-      harvestEndMonth: (data['harvestEndMonth'] as int?) ?? 0,
+      growingStartMonth: data['growingStartMonth'] as int?,
+      growingEndMonth: data['growingEndMonth'] as int?,
+      harvestStartMonth: data['harvestStartMonth'] as int?,
+      harvestEndMonth: data['harvestEndMonth'] as int?,
     );
   }
 }
