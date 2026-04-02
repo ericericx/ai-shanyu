@@ -41,10 +41,10 @@ class TimelineProduct {
       id: doc.id,
       categoryId: (data['categoryId'] as String?) ?? '',
       name: (data['name'] as String?) ?? '',
-      growingStartMonth: (data['growingStartMonth'] as int?) ?? 1,
-      growingEndMonth: (data['growingEndMonth'] as int?) ?? 12,
-      harvestStartMonth: (data['harvestStartMonth'] as int?) ?? 1,
-      harvestEndMonth: (data['harvestEndMonth'] as int?) ?? 12,
+      growingStartMonth: (data['growingStartMonth'] as int?) ?? 0,
+      growingEndMonth: (data['growingEndMonth'] as int?) ?? 0,
+      harvestStartMonth: (data['harvestStartMonth'] as int?) ?? 0,
+      harvestEndMonth: (data['harvestEndMonth'] as int?) ?? 0,
       status: (data['status'] as String?) ?? 'draft',
     );
   }

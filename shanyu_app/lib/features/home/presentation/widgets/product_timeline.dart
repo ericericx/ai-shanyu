@@ -196,8 +196,9 @@ class _ProductRowState extends State<_ProductRow> {
   bool _isHovered = false;
 
   bool _inRange(int start, int end, int month) {
+    if (start == 0 || end == 0) return false; // 未設定
     if (start <= end) return month >= start && month <= end;
-    return month >= start || month <= end;
+    return month >= start || month <= end; // 跨年
   }
 
   _MonthState _stateFor(int month) {
