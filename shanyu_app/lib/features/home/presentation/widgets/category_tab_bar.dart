@@ -15,7 +15,7 @@ abstract final class _TabBarTokens {
   static const tabHeight = 48.0;
   static const horizontalPadding = 16.0;
   static const tabHorizontalPadding = 16.0;
-  static const tabVerticalPadding = 8.0;
+  static const tabVerticalPadding = 5.0;
   static const tabBorderRadius = 20.0;
   static const tabFontSize = 14.0;
   static const skeletonWidth = 72.0;
@@ -39,7 +39,7 @@ class CategoryTabBar extends ConsumerWidget {
 
     return categoriesAsync.when(
       loading: () => const _TabBarSkeleton(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (e, _) => const SizedBox.shrink(),
       data: (categories) {
         if (categories.isEmpty) return const SizedBox.shrink();
 
@@ -112,7 +112,7 @@ class _CategoryTabState extends State<_CategoryTab> {
         onTap: () => context.go('/products/${widget.id}'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           padding: const EdgeInsets.symmetric(
             horizontal: _TabBarTokens.tabHorizontalPadding,
             vertical: _TabBarTokens.tabVerticalPadding,

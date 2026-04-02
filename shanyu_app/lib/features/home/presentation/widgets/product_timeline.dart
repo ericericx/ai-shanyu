@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../models/product_timeline_models.dart';
 import '../../providers/product_timeline_providers.dart';
@@ -197,6 +196,31 @@ class _ProductRow extends StatefulWidget {
 
 class _ProductRowState extends State<_ProductRow> {
   bool _isHovered = false;
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void dispose() {
+    _overlayEntry?.remove();
+    super.dispose();
+  }
+
+  void _showPopup(TapDownDetails details) {
+    _overlayEntry?.remove();
+    final entry = OverlayEntry(
+      builder: (_) => _PeriodPopupOverlay(
+        position: details.globalPosition,
+        product: widget.product,
+        onDismiss: _dismissPopup,
+      ),
+    );
+    _overlayEntry = entry;
+    Overlay.of(context).insert(entry);
+  }
+
+  void _dismissPopup() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
 
   List<Widget> _buildBars(int start, int end, Color color, double barH) {
     if (start <= 0 || end <= 0) return const [];
@@ -237,7 +261,7 @@ class _ProductRowState extends State<_ProductRow> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        onTap: () => context.go('/products/${widget.product.categoryId}'),
+        onTapDown: _showPopup,
         child: Container(
           height: _TimelineTokens.rowHeight,
           decoration: BoxDecoration(
@@ -458,6 +482,116 @@ class _TimelineError extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── 旬期資訊 Popup ─────────────────────────────────────────────────────────────
+
+class _PeriodPopupOverlay extends StatelessWidget {
+  const _PeriodPopupOverlay({
+    required this.position,
+    required this.product,
+    required this.onDismiss,
+  });
+
+  final Offset position;
+  final TimelineProduct product;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // 點擊任意處關閉
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: onDismiss,
+          ),
+        ),
+        // 資訊卡片
+        Positioned(
+          left: position.dx - 12,
+          top: position.dy + 14,
+          child: Material(
+            elevation: 6,
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.white,
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212121),
+                    ),
+                  ),
+                  if (product.growingStartPeriod > 0 ||
+                      product.harvestStartPeriod > 0)
+                    const SizedBox(height: 8),
+                  if (product.growingStartPeriod > 0)
+                    _PeriodRow(
+                      color: _TimelineTokens.growingColor,
+                      label: '生長期',
+                      start: product.growingStartPeriod,
+                      end: product.growingEndPeriod,
+                    ),
+                  if (product.growingStartPeriod > 0 &&
+                      product.harvestStartPeriod > 0)
+                    const SizedBox(height: 4),
+                  if (product.harvestStartPeriod > 0)
+                    _PeriodRow(
+                      color: _TimelineTokens.harvestColor,
+                      label: '採收期',
+                      start: product.harvestStartPeriod,
+                      end: product.harvestEndPeriod,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PeriodRow extends StatelessWidget {
+  const _PeriodRow({
+    required this.color,
+    required this.label,
+    required this.start,
+    required this.end,
+  });
+
+  final Color color;
+  final String label;
+  final int start;
+  final int end;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$label　${PeriodHelper.label(start)} ～ ${PeriodHelper.label(end)}',
+          style: const TextStyle(fontSize: 13, color: Color(0xFF424242)),
+        ),
+      ],
     );
   }
 }
