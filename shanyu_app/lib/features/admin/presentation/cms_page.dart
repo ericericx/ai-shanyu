@@ -723,35 +723,33 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
           ),
         ),
       ),
-      actions: [
-        if (_isUploading)
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  LinearProgressIndicator(value: _uploadProgress),
-                  const SizedBox(height: 4),
-                  Text(
-                    '上傳中 ${(_uploadProgress * 100).toInt()}%',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+      actions: _isUploading
+          ? [
+              SizedBox(
+                width: 200,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LinearProgressIndicator(value: _uploadProgress),
+                    const SizedBox(height: 4),
+                    Text(
+                      '上傳中 ${(_uploadProgress * 100).toInt()}%',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          )
-        else ...[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: _submit,
-            child: Text(_isEditing ? '儲存變更' : '確認新增'),
-          ),
-        ],
-      ],
+            ]
+          : [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: _submit,
+                child: Text(_isEditing ? '儲存變更' : '確認新增'),
+              ),
+            ],
     );
   }
 
