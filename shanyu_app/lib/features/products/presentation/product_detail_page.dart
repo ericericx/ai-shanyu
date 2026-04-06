@@ -273,9 +273,10 @@ class _DetailScrollBody extends StatelessWidget {
         final isDesktop = constraints.maxWidth >= 800;
 
         if (isDesktop) {
-          // 桌面：圖片左（固定 400px）、內容右
-          const imageWidth = 400.0;
-          final contentWidth = constraints.maxWidth - imageWidth - 32 - _DetailTokens.pagePadding * 2;
+          // 桌面：圖片左（1/3 寬）、內容右
+          final availableWidth = constraints.maxWidth - _DetailTokens.pagePadding * 2 - 32;
+          final imageWidth = availableWidth / 3;
+          final contentWidth = availableWidth - imageWidth;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(_DetailTokens.pagePadding),
@@ -371,7 +372,7 @@ class _MainImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 16 / 9,
+      aspectRatio: 1,
       child: imageUrl.isNotEmpty
           ? CachedNetworkImage(
               imageUrl: imageUrl,
@@ -884,7 +885,7 @@ class _DetailSkeleton extends StatelessWidget {
       children: [
         // 主圖骨架
         AspectRatio(
-          aspectRatio: 16 / 9,
+          aspectRatio: 1,
           child: Container(color: _DetailTokens.skeletonColor),
         ),
         const SizedBox(height: 24),
