@@ -3,20 +3,21 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../shared/theme/app_design_tokens.dart';
 import '../../models/cms_models.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
 abstract final class _BrandTokens {
-  static const brandRed = Color(0xFFB82020);
-  static const surface = Color(0xFFFAF8F5);
+  static const brandRed = AppDesignTokens.brandRed;
+  static const surface = AppDesignTokens.surfaceAlt;
   static const brandBrownLight = Color(0xFF8D6E63);
-  static const textPrimary = Color(0xFF2D2118);
-  static const textSecondary = Color(0xFF6D4C41);
+  static const textPrimary = AppDesignTokens.textPrimary;
+  static const textSecondary = AppDesignTokens.textSecondary;
 
-  static const pagePadding = 24.0;
+  static const pagePadding = AppDesignTokens.pagePadding;
   static const imageRadius = 12.0;
-  static const mobileBreakpoint = 600.0;
+  static const mobileBreakpoint = AppDesignTokens.mobileBreakpoint;
 }
 
 // ── BrandStorySection ─────────────────────────────────────────────────────────

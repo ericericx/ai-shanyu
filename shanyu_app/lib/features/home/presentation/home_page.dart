@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/theme/app_design_tokens.dart';
 import '../../../shared/widgets/app_nav_bar.dart';
 import '../providers/cms_providers.dart';
 import 'widgets/banner_carousel.dart';
 import 'widgets/brand_story_section.dart';
 import 'widgets/category_tab_bar.dart';
+import 'widgets/cta_section.dart';
 import 'widgets/product_timeline.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
 abstract final class _HomeTokens {
-  static const brandRed = Color(0xFFB82020);
-  static const brandRedDark = Color(0xFF9C1B1B);
-  static const surface = Color(0xFFFAF7F4);
-  static const textPrimary = Color(0xFF2D2118);
-  static const textSecondary = Color(0xFF6D4C41);
-  static const divider = Color(0xFFEFEBE9);
+  static const brandRed = AppDesignTokens.brandRed;
+  static const brandRedDark = AppDesignTokens.brandRedDark;
+  static const surface = AppDesignTokens.surface;
+  static const textPrimary = AppDesignTokens.textPrimary;
+  static const textSecondary = AppDesignTokens.textSecondary;
+  static const divider = AppDesignTokens.divider;
 
-  static const pagePadding = 24.0;
-  static const sectionGap = 48.0;
-  static const contentMaxWidth = 1200.0;
+  static const pagePadding = AppDesignTokens.pagePadding;
+  static const sectionGap = AppDesignTokens.sectionGap;
+  static const contentMaxWidth = AppDesignTokens.contentMaxWidth;
 }
 
 // ── HomePage ──────────────────────────────────────────────────────────────────
@@ -74,6 +76,20 @@ class _HomeBody extends ConsumerWidget {
 
           // 季節農產時程
           const _ProductTimelineSection(),
+
+          const SizedBox(height: _HomeTokens.sectionGap),
+
+          // 行動呼籲
+          CtaSection(
+            onPressed: () {
+              // 滾動回頂部讓使用者選擇分類
+              Scrollable.ensureVisible(
+                context,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeOut,
+              );
+            },
+          ),
 
           const SizedBox(height: _HomeTokens.sectionGap),
         ],

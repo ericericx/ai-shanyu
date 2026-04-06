@@ -4,22 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/theme/app_design_tokens.dart';
 import '../../../products/providers/product_providers.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
 abstract final class _Tokens {
-  static const brandRed = Color(0xFFB82020);
-  static const surface = Color(0xFFFAF7F4);
-  static const textPrimary = Color(0xFF2D2118);
-  static const textSecondary = Color(0xFF6D4C41);
-  static const dividerColor = Color(0xFFE0E0E0);
-  static const sectionPadding = EdgeInsets.symmetric(horizontal: 24, vertical: 24);
+  static const brandRed = AppDesignTokens.brandRed;
+  static const surface = AppDesignTokens.surface;
+  static const textPrimary = AppDesignTokens.textPrimary;
+  static const textSecondary = AppDesignTokens.textSecondary;
+  static const dividerColor = AppDesignTokens.dividerGrey;
+  static const sectionPadding = EdgeInsets.symmetric(horizontal: AppDesignTokens.pagePadding, vertical: AppDesignTokens.pagePadding);
   static const gridSpacing = 12.0;
   static const itemHeight = 56.0;
-  static const itemBorderRadius = 10.0;
+  static const itemBorderRadius = AppDesignTokens.radiusMd;
   static const itemFontSize = 16.0;
-  static const maxWidth = 1200.0;
+  static const maxWidth = AppDesignTokens.contentMaxWidth;
 }
 
 // ── CategoryTabBar ────────────────────────────────────────────────────────────

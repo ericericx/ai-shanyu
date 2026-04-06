@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart' show launchUrl, LaunchMode;
 
+import '../../../../shared/theme/app_design_tokens.dart';
 import '../../models/cms_models.dart';
 import '../../providers/cms_providers.dart';
 
@@ -21,11 +22,11 @@ abstract final class _BannerTokens {
   static const indicatorActiveColor = Colors.white;
   static const indicatorInactiveColor = Color(0x66FFFFFF);
 
-  static const placeholderGradientStart = Color(0xFFB82020);
-  static const placeholderGradientEnd = Color(0xFF9C1B1B);
+  static const placeholderGradientStart = AppDesignTokens.brandRed;
+  static const placeholderGradientEnd = AppDesignTokens.brandRedDark;
 
-  static const shimmerBase = Color(0xFFEEEEEE);
-  static const shimmerHighlight = Color(0xFFF5F5F5);
+  static const shimmerBase = AppDesignTokens.shimmerBase;
+  static const shimmerHighlight = AppDesignTokens.shimmerHighlight;
 }
 
 // ── BannerCarousel ────────────────────────────────────────────────────────────

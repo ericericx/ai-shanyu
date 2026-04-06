@@ -7,23 +7,24 @@ import '../../features/admin/providers/admin_providers.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/cart/providers/cart_providers.dart';
 import '../../features/chat/providers/chat_providers.dart';
+import '../theme/app_design_tokens.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
 abstract final class _NavBarTokens {
-  static const brandRed = Color(0xFFB82020);
-  static const dividerGrey = Color(0xFFE0E0E0);
+  static const brandRed = AppDesignTokens.brandRed;
+  static const dividerGrey = AppDesignTokens.dividerGrey;
   static const backgroundColor = Colors.white;
-  static const navLinkColor = Color(0xFF9C1B1B);
-  static const navLinkHoverColor = Color(0xFFB82020);
+  static const navLinkColor = AppDesignTokens.brandRedDark;
+  static const navLinkHoverColor = AppDesignTokens.brandRed;
 
   static const appBarHeight = 64.0;
-  static const horizontalPadding = 24.0;
+  static const horizontalPadding = AppDesignTokens.pagePadding;
   static const desktopHorizontalPadding = 40.0;
   static const iconButtonSize = 40.0;
   static const avatarRadius = 16.0;
 
-  static const mobileBreakpoint = 600.0;
+  static const mobileBreakpoint = AppDesignTokens.mobileBreakpoint;
 
   static const logoFontSize = 22.0;
   static const navLinkFontSize = 14.0;

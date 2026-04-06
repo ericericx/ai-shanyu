@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/theme/app_design_tokens.dart';
 import '../../models/product_timeline_models.dart';
 import '../../providers/product_timeline_providers.dart';
 
@@ -34,10 +35,10 @@ abstract final class _TimelineTokens {
   static const Color currentPeriodBg = Color(0x14B82020);
 
   /// 當前月份文字色
-  static const Color currentMonthTextColor = Color(0xFFB82020);
+  static const Color currentMonthTextColor = AppDesignTokens.brandRed;
 
   /// 月份刻度文字色
-  static const Color axisTextColor = Color(0xFF9E9E9E);
+  static const Color axisTextColor = AppDesignTokens.textMuted;
 
   /// 列分隔線
   static const Color dividerColor = Color(0xFFF0F0F0);
