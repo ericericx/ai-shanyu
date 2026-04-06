@@ -219,10 +219,13 @@ class _DetailScrollBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. 標題
           _ProductHeading(
             name: detail.name,
             isPreorder: detail.isPreorder,
           ),
+
+          // 2. 農產描述
           if (detail.description.isNotEmpty) ...[
             const SizedBox(height: 8),
             _ExpandableText(
@@ -235,22 +238,31 @@ class _DetailScrollBody extends StatelessWidget {
               ),
             ),
           ],
+
+          // 3. 農產故事
+          if (detail.story.isNotEmpty) ...[
+            const SizedBox(height: _DetailTokens.sectionGap),
+            _StoryExpansion(story: detail.story),
+          ],
+
           const SizedBox(height: _DetailTokens.sectionGap),
+
+          // 4. 規格選擇
           if (variants.isNotEmpty) ...[
             _VariantSelector(
               variants: variants,
               selectedIndex: selectedVariantIndex,
               onTap: onVariantTap,
             ),
-            const SizedBox(height: _DetailTokens.sectionGap),
+            const SizedBox(height: 12),
           ],
-          if (selectedVariant != null)
+
+          // 5. 價格 / 庫存
+          if (selectedVariant != null) ...[
             _PriceDisplay(variant: selectedVariant),
-          if (selectedVariant != null)
             _StockInfo(variant: selectedVariant),
-          const SizedBox(height: _DetailTokens.sectionGap),
-          if (detail.story.isNotEmpty)
-            _StoryExpansion(story: detail.story),
+          ],
+
           const SizedBox(height: _DetailTokens.sectionGap),
         ],
       ),
