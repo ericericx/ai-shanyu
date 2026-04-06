@@ -211,95 +211,137 @@ class _DetailScrollBody extends StatelessWidget {
         ? variants[selectedVariantIndex]
         : null;
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: _DetailTokens.contentMaxWidth,
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 1. 主封面圖
-              _MainImage(imageUrl: displayImageUrl, productName: detail.name),
-
-              // 2. 縮圖列（超過一張才顯示）
-              if (allImages.length > 1)
-                _ThumbnailStrip(
-                  imageUrls: allImages,
-                  activeImageUrl: displayImageUrl,
-                  onTap: onThumbnailTap,
-                ),
-
-              const SizedBox(height: _DetailTokens.sectionGap),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: _DetailTokens.pagePadding,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 3. 農產名稱 + 預購標籤
-                    _ProductHeading(
-                      name: detail.name,
-                      isPreorder: detail.isPreorder,
-                    ),
-
-                    // 3b. 農產描述
-                    if (detail.description.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      _ExpandableText(
-                        text: detail.description,
-                        maxLines: 3,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: _DetailTokens.textSecondary,
-                          height: 1.6,
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: _DetailTokens.sectionGap),
-
-                    // 4. 變體選擇（有變體才顯示）
-                    if (variants.isNotEmpty) ...[
-                      _VariantSelector(
-                        variants: variants,
-                        selectedIndex: selectedVariantIndex,
-                        onTap: onVariantTap,
-                      ),
-                      const SizedBox(height: _DetailTokens.sectionGap),
-                    ],
-
-                    // 5. 價格顯示
-                    if (selectedVariant != null)
-                      _PriceDisplay(variant: selectedVariant),
-
-                    // 6. 庫存 / 預估出貨日
-                    if (selectedVariant != null)
-                      _StockInfo(variant: selectedVariant),
-
-                    const SizedBox(height: _DetailTokens.sectionGap),
-
-                    // 7. 農產故事（ExpansionTile）
-                    if (detail.story.isNotEmpty)
-                      _StoryExpansion(story: detail.story),
-
-                    const SizedBox(height: _DetailTokens.sectionGap),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+    // 內容區塊（文字部分）
+    Widget contentColumn = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: _DetailTokens.pagePadding,
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _ProductHeading(
+            name: detail.name,
+            isPreorder: detail.isPreorder,
+          ),
+          if (detail.description.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _ExpandableText(
+              text: detail.description,
+              maxLines: 3,
+              style: const TextStyle(
+                fontSize: 15,
+                color: _DetailTokens.textSecondary,
+                height: 1.6,
+              ),
+            ),
+          ],
+          const SizedBox(height: _DetailTokens.sectionGap),
+          if (variants.isNotEmpty) ...[
+            _VariantSelector(
+              variants: variants,
+              selectedIndex: selectedVariantIndex,
+              onTap: onVariantTap,
+            ),
+            const SizedBox(height: _DetailTokens.sectionGap),
+          ],
+          if (selectedVariant != null)
+            _PriceDisplay(variant: selectedVariant),
+          if (selectedVariant != null)
+            _StockInfo(variant: selectedVariant),
+          const SizedBox(height: _DetailTokens.sectionGap),
+          if (detail.story.isNotEmpty)
+            _StoryExpansion(story: detail.story),
+          const SizedBox(height: _DetailTokens.sectionGap),
+        ],
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 800;
+
+        if (isDesktop) {
+          // 桌面：圖片左（固定 400px）、內容右
+          const imageWidth = 400.0;
+          final contentWidth = constraints.maxWidth - imageWidth - 32 - _DetailTokens.pagePadding * 2;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(_DetailTokens.pagePadding),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: imageWidth,
+                  child: Column(
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 1,
+                        child: _mainImageChild(displayImageUrl, detail.name),
+                      ),
+                      if (allImages.length > 1)
+                        _ThumbnailStrip(
+                          imageUrls: allImages,
+                          activeImageUrl: displayImageUrl,
+                          onTap: onThumbnailTap,
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 32),
+                SizedBox(
+                  width: contentWidth,
+                  child: contentColumn,
+                ),
+              ],
+            ),
+          );
+        }
+
+        // 手機：原本的上下排列
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: _DetailTokens.contentMaxWidth,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _MainImage(imageUrl: displayImageUrl, productName: detail.name),
+                  if (allImages.length > 1)
+                    _ThumbnailStrip(
+                      imageUrls: allImages,
+                      activeImageUrl: displayImageUrl,
+                      onTap: onThumbnailTap,
+                    ),
+                  const SizedBox(height: _DetailTokens.sectionGap),
+                  contentColumn,
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
 // ── 主封面圖 ──────────────────────────────────────────────────────────────────
+
+Widget _mainImageChild(String imageUrl, String productName) {
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(8),
+    child: imageUrl.isNotEmpty
+        ? CachedNetworkImage(
+            imageUrl: imageUrl,
+            fit: BoxFit.cover,
+            placeholder: (_, __) => Container(color: _DetailTokens.skeletonColor),
+            errorWidget: (_, __, ___) => _ImageFallback(label: productName),
+          )
+        : _ImageFallback(label: productName),
+  );
+}
 
 class _MainImage extends StatelessWidget {
   const _MainImage({

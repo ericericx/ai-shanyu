@@ -83,6 +83,7 @@ class ProductVariantModel {
     required this.imageUrls,
     required this.isPreorder,
     this.estimatedShipDate,
+    this.note,
   });
 
   final String id;
@@ -108,6 +109,9 @@ class ProductVariantModel {
   /// 預估出貨日（ISO 8601 格式），僅預購且缺貨時顯示
   final String? estimatedShipDate;
 
+  /// 備註
+  final String? note;
+
   bool get isAvailable => stock > 0 || isPreorder;
 
   factory ProductVariantModel.fromFirestore(
@@ -124,10 +128,11 @@ class ProductVariantModel {
       price: (data['price'] as int?) ?? 0,
       comparePrice: data['comparePrice'] as int?,
       stock: (data['stock'] as int?) ?? 0,
-      unit: (data['unit'] as String?) ?? '',
+      unit: data['unit']?.toString() ?? '',
       imageUrls: imageUrls,
       isPreorder: (data['isPreorder'] as bool?) ?? false,
       estimatedShipDate: data['estimatedShipDate'] as String?,
+      note: data.containsKey('note') ? data['note']?.toString() : null,
     );
   }
 

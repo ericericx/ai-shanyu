@@ -822,49 +822,71 @@ class _ExpandableText extends StatefulWidget {
 
 class _ExpandableTextState extends State<_ExpandableText> {
   bool _expanded = false;
+  bool _hasOverflow = false;
+  final _textKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+  }
+
+  @override
+  void didUpdateWidget(covariant _ExpandableText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+    }
+  }
+
+  void _checkOverflow() {
+    if (!mounted) return;
+    final renderBox =
+        _textKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) return;
+
+    final textPainter = TextPainter(
+      text: TextSpan(text: widget.text, style: widget.style),
+      maxLines: widget.maxLines,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: renderBox.size.width);
+
+    final overflow = textPainter.didExceedMaxLines;
+    if (overflow != _hasOverflow && mounted) {
+      setState(() => _hasOverflow = overflow);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final textSpan = TextSpan(text: widget.text, style: widget.style);
-        final tp = TextPainter(
-          text: textSpan,
-          maxLines: widget.maxLines,
-          textDirection: TextDirection.ltr,
-        )..layout(maxWidth: constraints.maxWidth);
-
-        final isOverflow = tp.didExceedMaxLines;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.text,
-              style: widget.style,
-              maxLines: _expanded ? null : widget.maxLines,
-              overflow: _expanded ? null : TextOverflow.ellipsis,
-            ),
-            if (isOverflow)
-              Align(
-                alignment: Alignment.center,
-                child: GestureDetector(
-                  onTap: () => setState(() => _expanded = !_expanded),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Icon(
-                      _expanded
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
-                      size: 22,
-                      color: _ProductListTokens.brandBrown,
-                    ),
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.text,
+          key: _textKey,
+          style: widget.style,
+          maxLines: _expanded ? null : widget.maxLines,
+          overflow: _expanded ? null : TextOverflow.ellipsis,
+        ),
+        if (_hasOverflow)
+          Align(
+            alignment: Alignment.center,
+            child: GestureDetector(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Icon(
+                  _expanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  size: 22,
+                  color: _ProductListTokens.brandBrown,
                 ),
               ),
-          ],
-        );
-      },
+            ),
+          ),
+      ],
     );
   }
 }
