@@ -603,28 +603,40 @@ class _ProductTab extends ConsumerWidget {
                   );
                 }
 
-                return ListView.separated(
-                  padding:
-                      const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                  itemCount: products.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return _ProductCard(
-                      product: product,
-                      categoryName:
-                          categoryMap[product.categoryId] ?? '—',
-                      onEditStatus: () => _showEditStatusDialog(
-                        context,
-                        ref,
-                        product,
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final cols = (constraints.maxWidth / 240)
+                        .floor()
+                        .clamp(1, 4);
+                    return GridView.builder(
+                      padding:
+                          const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: cols,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.75,
                       ),
-                      onEditSeasons: () => _showEditSeasonsDialog(
-                        context,
-                        ref,
-                        product,
-                      ),
+                      itemCount: products.length,
+                      itemBuilder: (context, index) {
+                        final product = products[index];
+                        return _ProductCard(
+                          product: product,
+                          categoryName:
+                              categoryMap[product.categoryId] ?? '—',
+                          onEditStatus: () => _showEditStatusDialog(
+                            context,
+                            ref,
+                            product,
+                          ),
+                          onEditSeasons: () => _showEditSeasonsDialog(
+                            context,
+                            ref,
+                            product,
+                          ),
+                        );
+                      },
                     );
                   },
                 );
@@ -810,29 +822,28 @@ class _ProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(_Tokens.cardBorderRadius),
         border: Border.all(color: _Tokens.divider),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 封面縮圖
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: product.coverImageUrl.isNotEmpty
-                  ? Image.network(
-                      product.coverImageUrl,
-                      width: 64,
-                      height: 64,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          const _PlaceholderThumb(),
-                    )
-                  : const _PlaceholderThumb(),
-            ),
-            const SizedBox(width: 12),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 封面圖
+          Expanded(
+            flex: 3,
+            child: product.coverImageUrl.isNotEmpty
+                ? Image.network(
+                    product.coverImageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        const _PlaceholderThumb(),
+                  )
+                : const _PlaceholderThumb(),
+          ),
 
-            // 商品資訊
-            Expanded(
+          // 資訊區
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -842,85 +853,83 @@ class _ProductCard extends StatelessWidget {
                         child: Text(
                           product.name,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: _Tokens.textPrimary,
                           ),
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
                       _StatusBadge(status: product.status),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
-                    '分類：$categoryName',
+                    categoryName,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: _Tokens.textSecondary,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  if (product.scheduledAt != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.schedule_outlined,
-                          size: 12,
-                          color: _Tokens.brandBrownLight,
+                  const Spacer(),
+                  // 操作按鈕
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _CardActionButton(
+                          icon: Icons.tune,
+                          label: '狀態',
+                          onPressed: onEditStatus,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '預約上架：${DateFormat('yyyy/MM/dd HH:mm').format(product.scheduledAt!)}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: _Tokens.brandBrownLight,
-                          ),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: _CardActionButton(
+                          icon: Icons.calendar_month_outlined,
+                          label: '時程',
+                          onPressed: onEditSeasons,
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-            // 操作按鈕
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: onEditStatus,
-                  icon: const Icon(Icons.tune, size: 16),
-                  label: const Text('編輯狀態'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: _Tokens.brandBrown,
-                    textStyle: const TextStyle(fontSize: 12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: onEditSeasons,
-                  icon: const Icon(Icons.calendar_month_outlined, size: 16),
-                  label: const Text('農產時程'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: _Tokens.brandBrown,
-                    textStyle: const TextStyle(fontSize: 12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+class _CardActionButton extends StatelessWidget {
+  const _CardActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 14),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: _Tokens.brandBrown,
+        side: const BorderSide(color: _Tokens.divider),
+        textStyle: const TextStyle(fontSize: 11),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }
