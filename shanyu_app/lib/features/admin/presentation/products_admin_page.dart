@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../products/models/category_model.dart';
 import '../../products/models/product_models.dart';
 import '../../home/models/product_timeline_models.dart';
+import '../../home/presentation/widgets/product_timeline.dart';
 import '../data/products_admin_repository.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
@@ -64,7 +65,7 @@ class ProductsAdminPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('商品管理'),
@@ -78,6 +79,10 @@ class ProductsAdminPage extends ConsumerWidget {
                 icon: Icon(Icons.inventory_2_outlined),
                 text: '商品管理',
               ),
+              Tab(
+                icon: Icon(Icons.calendar_month_outlined),
+                text: '時程總覽',
+              ),
             ],
           ),
         ),
@@ -85,6 +90,7 @@ class ProductsAdminPage extends ConsumerWidget {
           children: [
             _CategoryTab(),
             _ProductTab(),
+            _TimelineTab(),
           ],
         ),
       ),
@@ -1497,6 +1503,27 @@ class _DialogTextField extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 10,
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// Tab 3：時程總覽
+// ════════════════════════════════════════════════════════════════════════════════
+
+class _TimelineTab extends StatelessWidget {
+  const _TimelineTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 900),
+        child: const SingleChildScrollView(
+          padding: EdgeInsets.all(24),
+          child: ProductTimeline(),
         ),
       ),
     );
