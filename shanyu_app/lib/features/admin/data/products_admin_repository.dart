@@ -420,6 +420,7 @@ class ProductsAdminRepository {
       'unit': unit,
       'isPreorder': isPreorder,
       'note': note,
+      'sortOrder': 999,
       'imageUrls': <String>[],
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
