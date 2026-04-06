@@ -96,7 +96,7 @@ class _BannerManagementTabState extends ConsumerState<_BannerManagementTab> {
                               onMoveUp: () => _swapBanners(banners, index, index - 1),
                               onMoveDown: () => _swapBanners(banners, index, index + 1),
                               onEdit: () => _showEditBannerDialog(context, banners, index),
-                              onDelete: () => _deleteBanner(banners, index),
+                              onDelete: () => _deleteBanner(context, banners, index),
                             );
                           },
                         ),
@@ -116,12 +116,38 @@ class _BannerManagementTabState extends ConsumerState<_BannerManagementTab> {
     );
   }
 
-  void _deleteBanner(List<BannerItem> banners, int index) {
-    setState(() {
-      final list = List<BannerItem>.from(banners);
-      list.removeAt(index);
-      _localBanners = list;
-    });
+  Future<void> _deleteBanner(
+    BuildContext context,
+    List<BannerItem> banners,
+    int index,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('確認刪除'),
+        content: Text('確定要刪除「${banners[index].title ?? '此 Banner'}」嗎？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('刪除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      setState(() {
+        final list = List<BannerItem>.from(banners);
+        list.removeAt(index);
+        _localBanners = list;
+      });
+    }
   }
 
   void _swapBanners(List<BannerItem> banners, int from, int to) {
