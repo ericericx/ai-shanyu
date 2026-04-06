@@ -166,9 +166,45 @@ class AdminProductModel {
   }
 }
 
+// ── AdminVariantModel ────────────────────────────────────────────────────────
+
+/// 販售規格資料模型，對應 Firestore `products/{id}/variants/{variantId}`。
+class AdminVariantModel {
+  const AdminVariantModel({
+    required this.id,
+    required this.name,
+    required this.price,
+    this.comparePrice,
+    required this.stock,
+    required this.unit,
+    this.isPreorder = false,
+  });
+
+  final String id;
+  final String name;
+  final int price;
+  final int? comparePrice;
+  final int stock;
+  final String unit;
+  final bool isPreorder;
+
+  factory AdminVariantModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return AdminVariantModel(
+      id: doc.id,
+      name: (data['name'] as String?) ?? '',
+      price: (data['price'] as int?) ?? 0,
+      comparePrice: data['comparePrice'] as int?,
+      stock: (data['stock'] as int?) ?? 0,
+      unit: (data['unit'] as String?) ?? '',
+      isPreorder: (data['isPreorder'] as bool?) ?? false,
+    );
+  }
+}
+
 // ── ProductsAdminRepository ───────────────────────────────────────────────────
 
-/// 商品與分類的管理員寫入層。
+/// 農產與分類的管理員寫入層。
 ///
 /// 提供 CRUD 操作給 `/admin/products` 頁面使用。
 class ProductsAdminRepository {
@@ -346,6 +382,70 @@ class ProductsAdminRepository {
     final snapshot = await uploadTask;
     return snapshot.ref.getDownloadURL();
   }
+
+  // ── 販售規格 ──────────────────────────────────────────────────────────────
+
+  CollectionReference<Map<String, dynamic>> _variantsRef(String productId) =>
+      _firestore.collection(_kProducts).doc(productId).collection('variants');
+
+  /// 監聽指定農產的所有販售規格。
+  Stream<List<AdminVariantModel>> watchVariants(String productId) {
+    return _variantsRef(productId).snapshots().map(
+          (snap) => snap.docs.map(AdminVariantModel.fromFirestore).toList(),
+        );
+  }
+
+  /// 新增販售規格。
+  Future<void> createVariant(
+    String productId, {
+    required String name,
+    required int price,
+    int? comparePrice,
+    required int stock,
+    required String unit,
+    bool isPreorder = false,
+  }) async {
+    await _variantsRef(productId).add({
+      'name': name,
+      'price': price,
+      if (comparePrice != null) 'comparePrice': comparePrice,
+      'stock': stock,
+      'unit': unit,
+      'isPreorder': isPreorder,
+      'imageUrls': <String>[],
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// 更新販售規格。
+  Future<void> updateVariant(
+    String productId,
+    String variantId, {
+    required String name,
+    required int price,
+    int? comparePrice,
+    required int stock,
+    required String unit,
+    bool isPreorder = false,
+  }) async {
+    await _variantsRef(productId).doc(variantId).update({
+      'name': name,
+      'price': price,
+      'comparePrice': comparePrice,
+      'stock': stock,
+      'unit': unit,
+      'isPreorder': isPreorder,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// 刪除販售規格。
+  Future<void> deleteVariant(String productId, String variantId) async {
+    await _variantsRef(productId).doc(variantId).delete();
+  }
+
+  // ── helpers ─────────────────────────────────────────────────────────────────
 
   String _inferContentType(String fileName) {
     final lower = fileName.toLowerCase();

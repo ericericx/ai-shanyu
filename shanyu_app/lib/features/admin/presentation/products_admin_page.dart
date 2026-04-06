@@ -621,6 +621,11 @@ class _ProductTab extends ConsumerWidget {
                             ref,
                             product,
                           ),
+                          onEditVariants: () => _showVariantsDialog(
+                            context,
+                            ref,
+                            product,
+                          ),
                         ),
                       );
                     }).toList(),
@@ -683,6 +688,17 @@ class _ProductTab extends ConsumerWidget {
               );
         },
       ),
+    );
+  }
+
+  void _showVariantsDialog(
+    BuildContext context,
+    WidgetRef ref,
+    AdminProductModel product,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => _VariantsDialog(product: product),
     );
   }
 
@@ -840,6 +856,7 @@ class _ProductCard extends StatelessWidget {
     required this.onEditStatus,
     required this.onEditSeasons,
     required this.onEditContent,
+    required this.onEditVariants,
   });
 
   final AdminProductModel product;
@@ -847,6 +864,7 @@ class _ProductCard extends StatelessWidget {
   final VoidCallback onEditStatus;
   final VoidCallback onEditSeasons;
   final VoidCallback onEditContent;
+  final VoidCallback onEditVariants;
 
   @override
   Widget build(BuildContext context) {
@@ -925,6 +943,12 @@ class _ProductCard extends StatelessWidget {
                   icon: Icons.calendar_month_outlined,
                   label: '農產時程',
                   onPressed: onEditSeasons,
+                ),
+                const SizedBox(height: 4),
+                _CardActionButton(
+                  icon: Icons.sell_outlined,
+                  label: '販售規格',
+                  onPressed: onEditVariants,
                 ),
               ],
             ),
@@ -1455,6 +1479,551 @@ class _EditContentDialogState extends State<_EditContentDialog> {
                 child: const Text('儲存'),
               ),
             ],
+    );
+  }
+}
+
+// ── 販售規格管理 Dialog ───────────────────────────────────────────────────────
+
+class _VariantsDialog extends StatefulWidget {
+  const _VariantsDialog({required this.product});
+
+  final AdminProductModel product;
+
+  @override
+  State<_VariantsDialog> createState() => _VariantsDialogState();
+}
+
+class _VariantsDialogState extends State<_VariantsDialog> {
+  final _repo = ProductsAdminRepository();
+  late final Stream<List<AdminVariantModel>> _stream;
+
+  // 新增表單
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  final _comparePriceCtrl = TextEditingController();
+  final _stockCtrl = TextEditingController();
+  final _unitCtrl = TextEditingController();
+  bool _isPreorder = false;
+  bool _isAdding = false;
+
+  // 編輯中的 variant id
+  String? _editingId;
+  final _editNameCtrl = TextEditingController();
+  final _editPriceCtrl = TextEditingController();
+  final _editComparePriceCtrl = TextEditingController();
+  final _editStockCtrl = TextEditingController();
+  final _editUnitCtrl = TextEditingController();
+  bool _editIsPreorder = false;
+  bool _isSavingEdit = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _stream = _repo.watchVariants(widget.product.id);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _priceCtrl.dispose();
+    _comparePriceCtrl.dispose();
+    _stockCtrl.dispose();
+    _unitCtrl.dispose();
+    _editNameCtrl.dispose();
+    _editPriceCtrl.dispose();
+    _editComparePriceCtrl.dispose();
+    _editStockCtrl.dispose();
+    _editUnitCtrl.dispose();
+    super.dispose();
+  }
+
+  void _startEdit(AdminVariantModel v) {
+    setState(() {
+      _editingId = v.id;
+      _editNameCtrl.text = v.name;
+      _editPriceCtrl.text = v.price.toString();
+      _editComparePriceCtrl.text = v.comparePrice?.toString() ?? '';
+      _editStockCtrl.text = v.stock.toString();
+      _editUnitCtrl.text = v.unit;
+      _editIsPreorder = v.isPreorder;
+    });
+  }
+
+  void _cancelEdit() => setState(() => _editingId = null);
+
+  Future<void> _saveEdit() async {
+    final name = _editNameCtrl.text.trim();
+    final price = int.tryParse(_editPriceCtrl.text) ?? 0;
+    if (name.isEmpty || price <= 0) return;
+
+    setState(() => _isSavingEdit = true);
+    try {
+      await _repo.updateVariant(
+        widget.product.id,
+        _editingId!,
+        name: name,
+        price: price,
+        comparePrice: int.tryParse(_editComparePriceCtrl.text),
+        stock: int.tryParse(_editStockCtrl.text) ?? 0,
+        unit: _editUnitCtrl.text.trim(),
+        isPreorder: _editIsPreorder,
+      );
+      setState(() => _editingId = null);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新失敗：$e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSavingEdit = false);
+    }
+  }
+
+  Future<void> _addVariant() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isAdding = true);
+    try {
+      await _repo.createVariant(
+        widget.product.id,
+        name: _nameCtrl.text.trim(),
+        price: int.parse(_priceCtrl.text),
+        comparePrice: int.tryParse(_comparePriceCtrl.text),
+        stock: int.tryParse(_stockCtrl.text) ?? 0,
+        unit: _unitCtrl.text.trim(),
+        isPreorder: _isPreorder,
+      );
+      _nameCtrl.clear();
+      _priceCtrl.clear();
+      _comparePriceCtrl.clear();
+      _stockCtrl.clear();
+      _unitCtrl.clear();
+      setState(() => _isPreorder = false);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('新增失敗：$e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isAdding = false);
+    }
+  }
+
+  Future<void> _deleteVariant(AdminVariantModel v) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('確認刪除'),
+        content: Text('確定要刪除規格「${v.name}」嗎？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('刪除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _repo.deleteVariant(widget.product.id, v.id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: Text('販售規格 — ${widget.product.name}'),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 現有規格列表
+              StreamBuilder<List<AdminVariantModel>>(
+                stream: _stream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final variants = snapshot.data ?? [];
+                  if (variants.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Text(
+                        '尚無販售規格，請在下方新增',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  }
+                  return Column(
+                    children: variants.map((v) {
+                      if (_editingId == v.id) {
+                        return _buildEditRow(v);
+                      }
+                      return _buildVariantRow(v);
+                    }).toList(),
+                  );
+                },
+              ),
+
+              const Divider(height: 32),
+
+              // 新增表單
+              Text('新增規格', style: theme.textTheme.titleSmall),
+              const SizedBox(height: 8),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: TextFormField(
+                            controller: _nameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: '名稱',
+                              hintText: '如：4兩、半斤',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            validator: (v) =>
+                                (v == null || v.trim().isEmpty) ? '必填' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: TextFormField(
+                            controller: _unitCtrl,
+                            decoration: const InputDecoration(
+                              labelText: '單位',
+                              hintText: '罐/盒/斤',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            validator: (v) =>
+                                (v == null || v.trim().isEmpty) ? '必填' : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _priceCtrl,
+                            decoration: const InputDecoration(
+                              labelText: '售價',
+                              prefixText: 'NT\$ ',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return '必填';
+                              if ((int.tryParse(v) ?? 0) <= 0) return '須 > 0';
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _comparePriceCtrl,
+                            decoration: const InputDecoration(
+                              labelText: '原價（選填）',
+                              prefixText: 'NT\$ ',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _stockCtrl,
+                            decoration: const InputDecoration(
+                              labelText: '庫存',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            validator: (v) =>
+                                (v == null || v.isEmpty) ? '必填' : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _isPreorder,
+                          onChanged: (v) =>
+                              setState(() => _isPreorder = v ?? false),
+                        ),
+                        const Text('預購', style: TextStyle(fontSize: 13)),
+                        const Spacer(),
+                        FilledButton.icon(
+                          onPressed: _isAdding ? null : _addVariant,
+                          icon: _isAdding
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.add, size: 16),
+                          label: const Text('新增'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('完成'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVariantRow(AdminVariantModel v) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: _Tokens.divider)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${v.name}（${v.unit}）',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: _Tokens.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text(
+                      'NT\$ ${v.price}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _Tokens.brandBrown,
+                      ),
+                    ),
+                    if (v.comparePrice != null) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        'NT\$ ${v.comparePrice}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: _Tokens.textSecondary,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // 庫存
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: v.stock > 0
+                  ? _Tokens.statusActiveBg
+                  : _Tokens.statusArchivedBg,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              v.stock > 0 ? '庫存 ${v.stock}' : (v.isPreorder ? '預購' : '售完'),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: v.stock > 0
+                    ? _Tokens.statusActive
+                    : (v.isPreorder
+                        ? _Tokens.statusDraft
+                        : _Tokens.statusArchived),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: () => _startEdit(v),
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            tooltip: '編輯',
+            visualDensity: VisualDensity.compact,
+            color: _Tokens.brandBrown,
+          ),
+          IconButton(
+            onPressed: () => _deleteVariant(v),
+            icon: Icon(Icons.delete_outline, size: 18,
+                color: Theme.of(context).colorScheme.error),
+            tooltip: '刪除',
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditRow(AdminVariantModel v) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        color: _Tokens.statusDraftBg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextField(
+                  controller: _editNameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '名稱',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: _editUnitCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '單位',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _editPriceCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '售價',
+                    prefixText: 'NT\$ ',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _editComparePriceCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '原價',
+                    prefixText: 'NT\$ ',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _editStockCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '庫存',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Checkbox(
+                value: _editIsPreorder,
+                onChanged: (val) =>
+                    setState(() => _editIsPreorder = val ?? false),
+              ),
+              const Text('預購', style: TextStyle(fontSize: 13)),
+              const Spacer(),
+              TextButton(
+                onPressed: _isSavingEdit ? null : _cancelEdit,
+                child: const Text('取消'),
+              ),
+              const SizedBox(width: 4),
+              FilledButton(
+                onPressed: _isSavingEdit ? null : _saveEdit,
+                child: _isSavingEdit
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('儲存'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
