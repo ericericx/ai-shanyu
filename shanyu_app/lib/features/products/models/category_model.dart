@@ -12,6 +12,7 @@ class CategoryModel {
     required this.description,
     required this.coverImageUrl,
     required this.sortOrder,
+    this.isActive = true,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class CategoryModel {
   final String description;
   final String coverImageUrl;
   final int sortOrder;
+  final bool isActive;
 
   factory CategoryModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -30,6 +32,7 @@ class CategoryModel {
       description: (data['description'] as String?) ?? '',
       coverImageUrl: (data['coverImageUrl'] as String?) ?? '',
       sortOrder: (data['sortOrder'] as int?) ?? 0,
+      isActive: (data['isActive'] as bool?) ?? true,
     );
   }
 

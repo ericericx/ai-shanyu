@@ -31,12 +31,13 @@ class ProductRepository {
   Stream<List<CategoryModel>> watchCategories() {
     return _firestore
         .collection('categories')
-        .where('isActive', isEqualTo: true)
         .orderBy('sortOrder')
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs.map(CategoryModel.fromFirestore).toList(),
+          (snapshot) => snapshot.docs
+              .map(CategoryModel.fromFirestore)
+              .where((c) => c.isActive)
+              .toList(),
         );
   }
 
