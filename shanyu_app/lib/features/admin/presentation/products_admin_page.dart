@@ -1607,6 +1607,12 @@ class _VariantsDialogState extends State<_VariantsDialog> {
 
   Future<void> _addVariant() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedUnit == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('請選擇單位')),
+      );
+      return;
+    }
 
     setState(() => _isAdding = true);
     try {
@@ -1741,21 +1747,29 @@ class _VariantsDialogState extends State<_VariantsDialog> {
                         const SizedBox(width: 8),
                         Expanded(
                           flex: 2,
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedUnit,
-                            decoration: const InputDecoration(
+                          child: InputDecorator(
+                            decoration: InputDecoration(
                               labelText: '單位',
-                              border: OutlineInputBorder(),
+                              border: const OutlineInputBorder(),
                               isDense: true,
+                              errorText: _selectedUnit == null && _formKey.currentState != null
+                                  ? null : null,
                             ),
-                            items: [
-                              ..._unitPresets.map((u) =>
-                                  DropdownMenuItem(value: u, child: Text(u))),
-                              const DropdownMenuItem(
-                                  value: '自填', child: Text('自填...')),
-                            ],
-                            onChanged: (v) => setState(() => _selectedUnit = v),
-                            validator: (v) => v == null ? '必填' : null,
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedUnit,
+                                isExpanded: true,
+                                isDense: true,
+                                hint: const Text('選擇'),
+                                items: [
+                                  ..._unitPresets.map((u) =>
+                                      DropdownMenuItem(value: u, child: Text(u))),
+                                  const DropdownMenuItem(
+                                      value: '自填', child: Text('自填...')),
+                                ],
+                                onChanged: (v) => setState(() => _selectedUnit = v),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -1994,20 +2008,26 @@ class _VariantsDialogState extends State<_VariantsDialog> {
               const SizedBox(width: 8),
               Expanded(
                 flex: 2,
-                child: DropdownButtonFormField<String>(
-                  value: _editSelectedUnit,
+                child: InputDecorator(
                   decoration: const InputDecoration(
                     labelText: '單位',
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
-                  items: [
-                    ..._unitPresets.map((u) =>
-                        DropdownMenuItem(value: u, child: Text(u))),
-                    const DropdownMenuItem(
-                        value: '自填', child: Text('自填...')),
-                  ],
-                  onChanged: (v) => setState(() => _editSelectedUnit = v),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _editSelectedUnit,
+                      isExpanded: true,
+                      isDense: true,
+                      items: [
+                        ..._unitPresets.map((u) =>
+                            DropdownMenuItem(value: u, child: Text(u))),
+                        const DropdownMenuItem(
+                            value: '自填', child: Text('自填...')),
+                      ],
+                      onChanged: (v) => setState(() => _editSelectedUnit = v),
+                    ),
+                  ),
                 ),
               ),
             ],
