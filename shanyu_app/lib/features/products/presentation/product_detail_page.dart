@@ -227,6 +227,16 @@ class _DetailScrollBody extends StatelessWidget {
 
           // 2. 農產描述
           if (detail.description.isNotEmpty) ...[
+            const SizedBox(height: _DetailTokens.sectionGap),
+            const Text(
+              '農產描述',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: _DetailTokens.textPrimary,
+                letterSpacing: 0.3,
+              ),
+            ),
             const SizedBox(height: 8),
             _ExpandableText(
               text: detail.description,
@@ -548,10 +558,10 @@ class _VariantSelector extends StatelessWidget {
         const Text(
           '規格選擇',
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: _DetailTokens.textSecondary,
-            letterSpacing: 0.5,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: _DetailTokens.textPrimary,
+            letterSpacing: 0.3,
           ),
         ),
         const SizedBox(height: 10),
