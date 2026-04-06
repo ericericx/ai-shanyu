@@ -439,57 +439,60 @@ class _AddBannerDialogState extends ConsumerState<_AddBannerDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 圖片選擇區（5:2 比例預覽框）
-              GestureDetector(
-                onTap: _isUploading ? null : _pickImage,
-                child: AspectRatio(
-                  aspectRatio: 2.5,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant,
-                      ),
+              AspectRatio(
+                aspectRatio: 2.5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant,
                     ),
-                    child: _pickedBytes != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: InteractiveViewer(
-                              minScale: 1.0,
-                              maxScale: 4.0,
-                              child: Image.memory(
-                                _pickedBytes!,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
+                  ),
+                  child: _pickedBytes != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: InteractiveViewer(
+                            minScale: 1.0,
+                            maxScale: 4.0,
+                            child: Image.memory(
+                              _pickedBytes!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
                             ),
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.cloud_upload_outlined,
-                                size: 40,
-                                color: theme.colorScheme.primary,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '點擊或拖曳上傳圖片',
-                                style: theme.textTheme.bodyMedium?.copyWith(
+                          ),
+                        )
+                      : GestureDetector(
+                          onTap: _isUploading ? null : _pickImage,
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.cloud_upload_outlined,
+                                  size: 40,
                                   color: theme.colorScheme.primary,
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '建議比例 5:2（例如 1440×576 px）',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                const SizedBox(height: 8),
+                                Text(
+                                  '點擊上傳圖片',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 4),
+                                Text(
+                                  '建議比例 5:2（例如 1440×576 px）',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                  ),
+                        ),
                 ),
               ),
               if (_pickedBytes != null)
