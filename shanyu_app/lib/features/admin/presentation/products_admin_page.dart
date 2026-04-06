@@ -1090,46 +1090,63 @@ class _EditContentDialogState extends State<_EditContentDialog> {
     super.dispose();
   }
 
+  int _uploadedCount = 0;
+  int _uploadTotal = 0;
+
   Future<void> _pickAndUpload() async {
     if (_imageUrls.length >= 5) return;
 
     final result = await FilePicker.platform.pickFiles(
       type: FileType.image,
       withData: true,
+      allowMultiple: true,
     );
     if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    if (file.bytes == null) return;
+
+    // 過濾有效檔案
+    final files = result.files.where((f) => f.bytes != null).toList();
+    if (files.isEmpty) return;
 
     setState(() {
       _isUploading = true;
       _uploadProgress = 0;
+      _uploadedCount = 0;
+      _uploadTotal = files.length;
     });
 
-    try {
-      final repo = ProductsAdminRepository();
-      final fileName = '${const Uuid().v4()}_${file.name}';
-      final url = await repo.uploadProductImage(
-        file.bytes!,
-        fileName,
-        onProgress: (p) {
-          if (mounted) setState(() => _uploadProgress = p);
-        },
-      );
-      setState(() {
-        _imageUrls.add(url);
-        // 第一張自動設為預覽圖
-        if (_coverImageUrl.isEmpty) _coverImageUrl = url;
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('上傳失敗：$e')),
+    final repo = ProductsAdminRepository();
+    for (final file in files) {
+      try {
+        final fileName = '${const Uuid().v4()}_${file.name}';
+        final url = await repo.uploadProductImage(
+          file.bytes!,
+          fileName,
+          onProgress: (p) {
+            if (mounted) {
+              setState(() {
+                _uploadProgress =
+                    (_uploadedCount + p) / _uploadTotal;
+              });
+            }
+          },
         );
+        if (mounted) {
+          setState(() {
+            _imageUrls.add(url);
+            _uploadedCount++;
+            if (_coverImageUrl.isEmpty) _coverImageUrl = url;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('上傳失敗（${file.name}）：$e')),
+          );
+        }
       }
-    } finally {
-      if (mounted) setState(() => _isUploading = false);
     }
+
+    if (mounted) setState(() => _isUploading = false);
   }
 
   void _removeImage(int index) {
@@ -1382,21 +1399,32 @@ class _EditContentDialogState extends State<_EditContentDialog> {
                       LinearProgressIndicator(value: _uploadProgress),
                       const SizedBox(height: 4),
                       Text(
-                        '上傳中 ${(_uploadProgress * 100).toInt()}%',
+                        '上傳中 $_uploadedCount/$_uploadTotal（${(_uploadProgress * 100).toInt()}%）',
                         style: theme.textTheme.bodySmall,
                       ),
                     ],
                   ),
                 ),
 
+              // 超過 5 張警告
+              if (_imageUrls.length > 5)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    '圖片超過 5 張上限，請刪除多餘圖片後才能儲存',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+
               // 新增圖片按鈕
               OutlinedButton.icon(
-                onPressed: _imageUrls.length >= 5 || _isUploading
-                    ? null
-                    : _pickAndUpload,
+                onPressed: _isUploading ? null : _pickAndUpload,
                 icon: const Icon(Icons.add_photo_alternate_outlined),
                 label: Text(
-                  _imageUrls.length >= 5 ? '已達上限（5 張）' : '新增圖片',
+                  '新增圖片（${_imageUrls.length}/5）',
                 ),
               ),
             ],
@@ -1423,7 +1451,7 @@ class _EditContentDialogState extends State<_EditContentDialog> {
                 child: const Text('取消'),
               ),
               FilledButton(
-                onPressed: _handleSave,
+                onPressed: _imageUrls.length > 5 ? null : _handleSave,
                 child: const Text('儲存'),
               ),
             ],
