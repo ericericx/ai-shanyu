@@ -675,14 +675,6 @@ class _PriceDisplay extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(width: 6),
-          Text(
-            '/ ${variant.unit}',
-            style: const TextStyle(
-              fontSize: 14,
-              color: _DetailTokens.textSecondary,
-            ),
-          ),
         ],
       ),
     );
