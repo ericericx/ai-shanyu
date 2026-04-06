@@ -8,28 +8,22 @@ import '../../../products/providers/product_providers.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────
 
-abstract final class _TabBarTokens {
+abstract final class _Tokens {
   static const brandRed = Color(0xFFB82020);
-  static const backgroundColor = Colors.white;
+  static const surface = Color(0xFFFAF7F4);
+  static const textPrimary = Color(0xFF2D2118);
+  static const textSecondary = Color(0xFF6D4C41);
   static const dividerColor = Color(0xFFE0E0E0);
-  static const tabHeight = 48.0;
-  static const horizontalPadding = 16.0;
-  static const tabHorizontalPadding = 16.0;
-  static const tabVerticalPadding = 5.0;
-  static const tabBorderRadius = 20.0;
-  static const tabFontSize = 14.0;
-  static const skeletonWidth = 72.0;
-  static const skeletonHeight = 32.0;
-  static const skeletonRadius = 20.0;
+  static const sectionPadding = EdgeInsets.symmetric(horizontal: 24, vertical: 24);
+  static const gridSpacing = 12.0;
+  static const itemHeight = 56.0;
+  static const itemBorderRadius = 10.0;
+  static const itemFontSize = 16.0;
+  static const maxWidth = 1200.0;
 }
 
 // ── CategoryTabBar ────────────────────────────────────────────────────────────
 
-/// 首頁分類頁籤列。
-///
-/// 從 [categoriesProvider] 動態載入分類，依 sortOrder 排序，
-/// 點擊後導向 `/products/{categoryId}`。
-/// 載入中顯示 skeleton，無分類時隱藏。
 class CategoryTabBar extends ConsumerWidget {
   const CategoryTabBar({super.key});
 
@@ -38,7 +32,7 @@ class CategoryTabBar extends ConsumerWidget {
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return categoriesAsync.when(
-      loading: () => const _TabBarSkeleton(),
+      loading: () => const _CategorySection(child: _SkeletonGrid()),
       error: (e, _) => const SizedBox.shrink(),
       data: (categories) {
         if (categories.isEmpty) return const SizedBox.shrink();
@@ -46,60 +40,105 @@ class CategoryTabBar extends ConsumerWidget {
         final sorted = [...categories]
           ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
-        return _TabBarContent(categories: sorted);
+        return _CategorySection(child: _CategoryGrid(categories: sorted));
       },
     );
   }
 }
 
-// ── 頁籤內容列 ────────────────────────────────────────────────────────────────
+// ── Section 外框（標題 + 內容） ───────────────────────────────────────────────
 
-class _TabBarContent extends StatelessWidget {
-  const _TabBarContent({required this.categories});
+class _CategorySection extends StatelessWidget {
+  const _CategorySection({required this.child});
 
-  final List<dynamic> categories;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: _TabBarTokens.tabHeight,
-      decoration: const BoxDecoration(
-        color: _TabBarTokens.backgroundColor,
-        border: Border(
-          bottom: BorderSide(color: _TabBarTokens.dividerColor, width: 1),
-        ),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(
-          horizontal: _TabBarTokens.horizontalPadding,
-        ),
-        child: Row(
-          children: categories
-              .map((cat) => _CategoryTab(
-                    id: cat.id as String,
-                    name: cat.name as String,
-                  ))
-              .toList(),
+      color: Colors.white,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _Tokens.maxWidth),
+          child: Padding(
+            padding: _Tokens.sectionPadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 區塊標題
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: _Tokens.brandRed,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      '農產分類',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: _Tokens.textPrimary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                child,
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-// ── 單一頁籤 ──────────────────────────────────────────────────────────────────
+// ── 分類格狀列表 ──────────────────────────────────────────────────────────────
 
-class _CategoryTab extends StatefulWidget {
-  const _CategoryTab({required this.id, required this.name});
+class _CategoryGrid extends StatelessWidget {
+  const _CategoryGrid({required this.categories});
+
+  final List<dynamic> categories;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: _Tokens.gridSpacing,
+        mainAxisSpacing: _Tokens.gridSpacing,
+        mainAxisExtent: _Tokens.itemHeight,
+      ),
+      itemCount: categories.length,
+      itemBuilder: (_, i) => _CategoryItem(
+        id: categories[i].id as String,
+        name: categories[i].name as String,
+      ),
+    );
+  }
+}
+
+// ── 單一分類按鈕 ──────────────────────────────────────────────────────────────
+
+class _CategoryItem extends StatefulWidget {
+  const _CategoryItem({required this.id, required this.name});
 
   final String id;
   final String name;
 
   @override
-  State<_CategoryTab> createState() => _CategoryTabState();
+  State<_CategoryItem> createState() => _CategoryItemState();
 }
 
-class _CategoryTabState extends State<_CategoryTab> {
+class _CategoryItemState extends State<_CategoryItem> {
   bool _isHovered = false;
 
   @override
@@ -112,32 +151,23 @@ class _CategoryTabState extends State<_CategoryTab> {
         onTap: () => context.go('/products/${widget.id}'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-          padding: const EdgeInsets.symmetric(
-            horizontal: _TabBarTokens.tabHorizontalPadding,
-            vertical: _TabBarTokens.tabVerticalPadding,
-          ),
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: _isHovered
-                ? _TabBarTokens.brandRed.withValues(alpha: 0.08)
-                : Colors.transparent,
-            borderRadius:
-                BorderRadius.circular(_TabBarTokens.tabBorderRadius),
+                ? _Tokens.brandRed.withValues(alpha: 0.06)
+                : _Tokens.surface,
+            borderRadius: BorderRadius.circular(_Tokens.itemBorderRadius),
             border: Border.all(
-              color: _isHovered
-                  ? _TabBarTokens.brandRed
-                  : _TabBarTokens.dividerColor,
-              width: 1,
+              color: _isHovered ? _Tokens.brandRed : _Tokens.dividerColor,
+              width: 1.5,
             ),
           ),
           child: Text(
             widget.name,
             style: TextStyle(
-              fontSize: _TabBarTokens.tabFontSize,
-              fontWeight: FontWeight.w500,
-              color: _isHovered
-                  ? _TabBarTokens.brandRed
-                  : const Color(0xFF333333),
+              fontSize: _Tokens.itemFontSize,
+              fontWeight: FontWeight.w600,
+              color: _isHovered ? _Tokens.brandRed : _Tokens.textPrimary,
             ),
           ),
         ),
@@ -146,41 +176,27 @@ class _CategoryTabState extends State<_CategoryTab> {
   }
 }
 
-// ── Skeleton 佔位 ─────────────────────────────────────────────────────────────
+// ── Skeleton ──────────────────────────────────────────────────────────────────
 
-class _TabBarSkeleton extends StatelessWidget {
-  const _TabBarSkeleton();
+class _SkeletonGrid extends StatelessWidget {
+  const _SkeletonGrid();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: _TabBarTokens.tabHeight,
-      decoration: const BoxDecoration(
-        color: _TabBarTokens.backgroundColor,
-        border: Border(
-          bottom: BorderSide(color: _TabBarTokens.dividerColor, width: 1),
-        ),
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: _Tokens.gridSpacing,
+        mainAxisSpacing: _Tokens.gridSpacing,
+        mainAxisExtent: _Tokens.itemHeight,
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(
-          horizontal: _TabBarTokens.horizontalPadding,
-          vertical: 8,
-        ),
-        child: Row(
-          children: List.generate(
-            5,
-            (_) => Container(
-              width: _TabBarTokens.skeletonWidth,
-              height: _TabBarTokens.skeletonHeight,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE0E0E0),
-                borderRadius:
-                    BorderRadius.circular(_TabBarTokens.skeletonRadius),
-              ),
-            ),
-          ),
+      itemCount: 6,
+      itemBuilder: (_, __) => Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFE0E0E0),
+          borderRadius: BorderRadius.circular(_Tokens.itemBorderRadius),
         ),
       ),
     );

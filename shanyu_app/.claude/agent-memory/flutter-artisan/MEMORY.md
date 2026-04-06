@@ -1,0 +1,2 @@
+- [山裕電商 Flutter 專案架構](project_architecture.md) — 技術棧、目錄結構、套件版本與重要慣例摘要
+- [Riverpod Provider 必須雙 import](feedback_riverpod_imports.md) — provider 檔缺 flutter_riverpod import 會導致 web release 編譯失敗

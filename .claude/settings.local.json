@@ -30,7 +30,21 @@
       "Bash(git -C:*)",
       "Bash(find /Users/eric.chien/Desktop/MyProject/ai-shanyu/shanyu_app/lib -name *.dart)",
       "Bash(openspec status:*)",
-      "Bash(flutter analyze:*)"
+      "Bash(flutter analyze:*)",
+      "WebFetch(domain:scontent-tpe1-1.xx.fbcdn.net)",
+      "Bash(mkdir -p /Users/eric.chien/Desktop/MyProject/ai-shanyu/shanyu_app/assets/images)",
+      "Bash(cp /Users/eric.chien/Desktop/shanyu.avif /Users/eric.chien/Desktop/MyProject/ai-shanyu/shanyu_app/assets/images/shanyu.avif)",
+      "Bash(openspec new:*)",
+      "Bash(openspec instructions:*)",
+      "Bash(sips -s format png /Users/eric.chien/Desktop/shanyu.avif --out /Users/eric.chien/Desktop/MyProject/ai-shanyu/shanyu_app/assets/images/shanyu.png)",
+      "Bash(npx -y firestore-export-import --project shayu-staging)",
+      "Bash(node -e ':*)",
+      "Bash(npx ts-node --transpile-only -e ':*)",
+      "Bash(npx ts-node:*)",
+      "Bash(gsutil ls:*)",
+      "Bash(gcloud config:*)",
+      "Bash(gsutil cors:*)",
+      "Bash(openspec archive:*)"
     ]
   }
 }

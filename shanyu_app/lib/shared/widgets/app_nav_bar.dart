@@ -100,10 +100,16 @@ class _BrandLogo extends StatelessWidget {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () => context.go(AppRoutes.home),
-        child: Image.asset(
-          'assets/images/shanyu.png',
-          height: 36,
-          fit: BoxFit.contain,
+        child: ColorFiltered(
+          colorFilter: const ColorFilter.mode(
+            _NavBarTokens.brandRed,
+            BlendMode.srcIn,
+          ),
+          child: Image.asset(
+            'assets/images/shanyu.png',
+            height: 36,
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     );

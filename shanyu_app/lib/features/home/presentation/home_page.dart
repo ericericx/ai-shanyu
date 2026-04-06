@@ -52,10 +52,7 @@ class _HomeBody extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 分類頁籤列
-          const CategoryTabBar(),
-
-          // Banner 輪播（最大寬 1440px，超過時自動置中留邊）
+          // Banner
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1440),
@@ -65,12 +62,17 @@ class _HomeBody extends ConsumerWidget {
 
           const SizedBox(height: _HomeTokens.sectionGap),
 
-          // 品牌故事區塊
+          // 山裕故事
           _BrandStorySectionWrapper(),
 
           const SizedBox(height: _HomeTokens.sectionGap),
 
-          // 季節流水線區塊
+          // 商品分類
+          const CategoryTabBar(),
+
+          const SizedBox(height: _HomeTokens.sectionGap),
+
+          // 季節農產時程
           const _ProductTimelineSection(),
 
           const SizedBox(height: _HomeTokens.sectionGap),
