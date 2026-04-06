@@ -34,7 +34,7 @@ const _kNavItems = [
     path: '/admin/cms',
   ),
   _NavItem(
-    label: '商品管理',
+    label: '農產管理',
     icon: Icons.inventory_2_outlined,
     selectedIcon: Icons.inventory_2,
     path: '/admin/products',

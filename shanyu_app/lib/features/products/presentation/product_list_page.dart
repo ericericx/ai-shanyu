@@ -129,7 +129,7 @@ class _CategoryHeader extends StatelessWidget {
               ),
             )
           : Text(
-              categoryName ?? '商品列表',
+              categoryName ?? '農產列表',
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -493,7 +493,7 @@ class _ProductListEmpty extends StatelessWidget {
           Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
           const SizedBox(height: 12),
           Text(
-            '此分類目前無商品',
+            '此分類目前無農產',
             style: TextStyle(
               fontSize: 15,
               color: Colors.grey[600],

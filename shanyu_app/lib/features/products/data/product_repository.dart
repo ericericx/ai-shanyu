@@ -55,7 +55,7 @@ class ProductRepository {
         .snapshots()
         .map((snap) {
       if (!snap.exists) {
-        throw Exception('商品 $productId 不存在');
+        throw Exception('農產 $productId 不存在');
       }
       return ProductDetailModel.fromFirestore(
         snap as DocumentSnapshot<Map<String, dynamic>>,

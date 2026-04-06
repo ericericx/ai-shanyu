@@ -76,8 +76,8 @@ final _productSortByProvider =
 
 // ── ProductsAdminPage ─────────────────────────────────────────────────────────
 
-/// 商品管理後台頁面（路由：`/admin/products`）。
-/// 分為「分類管理」與「商品管理」兩個 Tab。
+/// 農產管理後台頁面（路由：`/admin/products`）。
+/// 分為「分類管理」與「農產管理」兩個 Tab。
 class ProductsAdminPage extends ConsumerWidget {
   const ProductsAdminPage({super.key});
 
@@ -87,7 +87,7 @@ class ProductsAdminPage extends ConsumerWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('商品管理'),
+          title: const Text('農產管理'),
           bottom: const TabBar(
             tabs: [
               Tab(
@@ -96,7 +96,7 @@ class ProductsAdminPage extends ConsumerWidget {
               ),
               Tab(
                 icon: Icon(Icons.inventory_2_outlined),
-                text: '商品管理',
+                text: '農產管理',
               ),
               Tab(
                 icon: Icon(Icons.calendar_month_outlined),
@@ -491,7 +491,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
-// Tab 2：商品管理
+// Tab 2：農產管理
 // ════════════════════════════════════════════════════════════════════════════════
 
 class _ProductTab extends ConsumerWidget {
@@ -512,7 +512,7 @@ class _ProductTab extends ConsumerWidget {
         backgroundColor: _Tokens.brandBrown,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('新增商品'),
+        label: const Text('新增農產'),
       ),
       body: Column(
         children: [
@@ -575,7 +575,7 @@ class _ProductTab extends ConsumerWidget {
                 if (products.isEmpty) {
                   return const Center(
                     child: Text(
-                      '此分類下尚無商品',
+                      '此分類下尚無農產',
                       style:
                           TextStyle(color: _Tokens.textSecondary),
                     ),
@@ -886,7 +886,7 @@ class _ProductCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 商品名稱
+                // 農產名稱
                 Text(
                   product.name,
                   style: const TextStyle(
@@ -1219,8 +1219,8 @@ class _EditContentDialogState extends State<_EditContentDialog> {
               TextFormField(
                 controller: _descController,
                 decoration: const InputDecoration(
-                  labelText: '商品描述',
-                  hintText: '簡短描述商品特色',
+                  labelText: '農產描述',
+                  hintText: '簡短描述農產特色',
                   border: OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
@@ -1512,7 +1512,7 @@ class _EditStatusDialogState extends State<_EditStatusDialog> {
     return AlertDialog(
       shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: Text('編輯商品狀態'),
+      title: Text('編輯農產狀態'),
       content: SizedBox(
         width: 360,
         child: Column(
@@ -1638,7 +1638,7 @@ class _EditStatusDialogState extends State<_EditStatusDialog> {
   }
 }
 
-// ── 新增商品 Dialog ───────────────────────────────────────────────────────────
+// ── 新增農產 Dialog ───────────────────────────────────────────────────────────
 
 class _CreateProductDialog extends StatefulWidget {
   const _CreateProductDialog({
@@ -1718,7 +1718,7 @@ class _CreateProductDialogState extends State<_CreateProductDialog> {
     return AlertDialog(
       shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: const Text('新增商品'),
+      title: const Text('新增農產'),
       content: SizedBox(
         width: 440,
         child: Form(
@@ -1731,7 +1731,7 @@ class _CreateProductDialogState extends State<_CreateProductDialog> {
                 DropdownButtonFormField<String>(
                   value: _selectedCategoryId,
                   decoration: const InputDecoration(
-                    labelText: '商品分類',
+                    labelText: '農產分類',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -1753,7 +1753,7 @@ class _CreateProductDialogState extends State<_CreateProductDialog> {
                 const SizedBox(height: 12),
                 _DialogTextField(
                   controller: _nameCtrl,
-                  label: '商品名稱',
+                  label: '農產名稱',
                   hint: '例如：玉荷包荔枝禮盒',
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? '請輸入名稱' : null,
@@ -1761,8 +1761,8 @@ class _CreateProductDialogState extends State<_CreateProductDialog> {
                 const SizedBox(height: 12),
                 _DialogTextField(
                   controller: _descCtrl,
-                  label: '商品描述',
-                  hint: '商品簡介（選填）',
+                  label: '農產描述',
+                  hint: '農產簡介（選填）',
                   maxLines: 3,
                 ),
                 const SizedBox(height: 12),
@@ -1965,7 +1965,7 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
               onChanged: (v) => setState(() => _showOnTimeline = v ?? true),
               title: const Text('顯示於首頁農產時程', style: TextStyle(fontSize: 13)),
               subtitle: const Text(
-                '既成商品（如茶庫存）可關閉此選項',
+                '既成農產（如茶庫存）可關閉此選項',
                 style: TextStyle(fontSize: 11),
               ),
               dense: true,

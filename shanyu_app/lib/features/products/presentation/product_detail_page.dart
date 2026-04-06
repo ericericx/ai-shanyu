@@ -269,7 +269,7 @@ class _DetailScrollBody extends StatelessWidget {
 
                     const SizedBox(height: _DetailTokens.sectionGap),
 
-                    // 7. 商品故事（ExpansionTile）
+                    // 7. 農產故事（ExpansionTile）
                     if (detail.story.isNotEmpty)
                       _StoryExpansion(story: detail.story),
 
@@ -683,7 +683,7 @@ class _StockInfo extends StatelessWidget {
   }
 }
 
-// ── 商品故事（可展開） ────────────────────────────────────────────────────────
+// ── 農產故事（可展開） ────────────────────────────────────────────────────────
 
 class _StoryExpansion extends StatelessWidget {
   const _StoryExpansion({required this.story});
@@ -702,7 +702,7 @@ class _StoryExpansion extends StatelessWidget {
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
         childrenPadding: const EdgeInsets.only(bottom: 12),
         title: const Text(
-          '商品故事',
+          '農產故事',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,

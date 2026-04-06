@@ -386,7 +386,7 @@ class _BannerLinkLabel extends StatelessWidget {
           .firstOrNull
           ?.name;
       return Text(
-        '導連商品：${productName ?? '載入中...'}',
+        '導連農產：${productName ?? '載入中...'}',
         style: style,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -727,7 +727,7 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
                   ),
                   ButtonSegment(
                     value: _BannerLinkType.product,
-                    label: Text('商品'),
+                    label: Text('農產'),
                     icon: Icon(Icons.shopping_bag_outlined, size: 16),
                   ),
                   ButtonSegment(
@@ -913,7 +913,7 @@ class _AllProductsDropdown extends ConsumerWidget {
 
     return categoriesAsync.when(
       loading: () => const LinearProgressIndicator(),
-      error: (_, __) => const Text('無法載入商品'),
+      error: (_, __) => const Text('無法載入農產'),
       data: (categories) {
         // 為每個分類載入商品
         final allItems = <DropdownMenuItem<String>>[];
@@ -953,7 +953,7 @@ class _AllProductsDropdown extends ConsumerWidget {
         }
 
         if (allItems.isEmpty) {
-          return const Text('尚無商品');
+          return const Text('尚無農產');
         }
 
         // 確認 selectedProductId 存在於選項中
@@ -964,7 +964,7 @@ class _AllProductsDropdown extends ConsumerWidget {
         return DropdownButtonFormField<String>(
           initialValue: validValue,
           decoration: const InputDecoration(
-            labelText: '選擇商品',
+            labelText: '選擇農產',
             border: OutlineInputBorder(),
           ),
           items: allItems,
@@ -974,7 +974,7 @@ class _AllProductsDropdown extends ConsumerWidget {
             if (catId != null) onChanged(catId, prodId);
           },
           validator: (v) =>
-              v == null || v.startsWith('_header_') ? '請選擇商品' : null,
+              v == null || v.startsWith('_header_') ? '請選擇農產' : null,
         );
       },
     );
