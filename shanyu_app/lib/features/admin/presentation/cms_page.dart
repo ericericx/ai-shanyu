@@ -84,9 +84,8 @@ class _BannerManagementTabState extends ConsumerState<_BannerManagementTab> {
                 Expanded(
                   child: banners.isEmpty
                       ? const _EmptyBannerPlaceholder()
-                      : ReorderableListView.builder(
+                      : ReorderableListView(
                           padding: const EdgeInsets.all(16),
-                          itemCount: banners.length,
                           onReorder: (oldIndex, newIndex) {
                             setState(() {
                               final list = List<BannerItem>.from(banners);
@@ -96,14 +95,14 @@ class _BannerManagementTabState extends ConsumerState<_BannerManagementTab> {
                               _localBanners = list;
                             });
                           },
-                          itemBuilder: (context, index) {
-                            final banner = banners[index];
-                            return _BannerListTile(
-                              key: ValueKey(banner.id),
-                              banner: banner,
-                              onDelete: () => _deleteBanner(banners, index),
-                            );
-                          },
+                          children: [
+                            for (int i = 0; i < banners.length; i++)
+                              _BannerListTile(
+                                key: ValueKey(banners[i].id),
+                                banner: banners[i],
+                                onDelete: () => _deleteBanner(banners, i),
+                              ),
+                          ],
                         ),
                 ),
                 _BannerActionBar(
