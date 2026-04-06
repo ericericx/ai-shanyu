@@ -55,11 +55,22 @@ final _allProductsProvider =
 final _selectedCategoryFilterProvider =
     StateProvider<String?>((ref) => null);
 
-/// 商品排序方式
-enum _ProductSortBy { name, status, category, updatedAt }
+/// 商品排序方式（循環切換：狀態 → 分類 → 時間）
+enum _ProductSortBy {
+  status(Icons.toggle_on_outlined, '狀態排序'),
+  category(Icons.category_outlined, '分類排序'),
+  updatedAt(Icons.schedule_outlined, '時間排序');
+
+  const _ProductSortBy(this.icon, this.label);
+  final IconData icon;
+  final String label;
+
+  _ProductSortBy get next =>
+      _ProductSortBy.values[(index + 1) % _ProductSortBy.values.length];
+}
 
 final _productSortByProvider =
-    StateProvider<_ProductSortBy>((ref) => _ProductSortBy.name);
+    StateProvider<_ProductSortBy>((ref) => _ProductSortBy.status);
 
 // ── ProductsAdminPage ─────────────────────────────────────────────────────────
 
@@ -514,39 +525,25 @@ class _ProductTab extends ConsumerWidget {
             },
           ),
 
-          // 排序列
+          // 排序按鈕（點擊循環切換）
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.only(left: 12, right: 16, top: 4),
             child: Row(
               children: [
-                Text('排序', style: TextStyle(
-                  fontSize: 12, color: _Tokens.textSecondary)),
-                const SizedBox(width: 8),
-                SegmentedButton<_ProductSortBy>(
-                  segments: const [
-                    ButtonSegment(
-                      value: _ProductSortBy.name,
-                      label: Text('名稱', style: TextStyle(fontSize: 12)),
-                    ),
-                    ButtonSegment(
-                      value: _ProductSortBy.status,
-                      label: Text('狀態', style: TextStyle(fontSize: 12)),
-                    ),
-                    ButtonSegment(
-                      value: _ProductSortBy.category,
-                      label: Text('分類', style: TextStyle(fontSize: 12)),
-                    ),
-                    ButtonSegment(
-                      value: _ProductSortBy.updatedAt,
-                      label: Text('更新時間', style: TextStyle(fontSize: 12)),
-                    ),
-                  ],
-                  selected: {sortBy},
-                  onSelectionChanged: (v) =>
-                      ref.read(_productSortByProvider.notifier).state = v.first,
-                  style: ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                IconButton(
+                  onPressed: () => ref
+                      .read(_productSortByProvider.notifier)
+                      .state = sortBy.next,
+                  icon: Icon(sortBy.icon, size: 20),
+                  tooltip: sortBy.label,
+                  color: _Tokens.brandBrown,
+                  visualDensity: VisualDensity.compact,
+                ),
+                Text(
+                  sortBy.label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: _Tokens.textSecondary,
                   ),
                 ),
               ],
@@ -578,11 +575,12 @@ class _ProductTab extends ConsumerWidget {
                       in categoriesAsync.valueOrNull ?? <AdminCategoryModel>[])
                     c.id: c.name,
                 };
+                const statusOrder = {'active': 0, 'draft': 1, 'archived': 2};
                 switch (sortBy) {
-                  case _ProductSortBy.name:
-                    products.sort((a, b) => a.name.compareTo(b.name));
                   case _ProductSortBy.status:
-                    products.sort((a, b) => a.status.compareTo(b.status));
+                    products.sort((a, b) =>
+                        (statusOrder[a.status] ?? 9)
+                            .compareTo(statusOrder[b.status] ?? 9));
                   case _ProductSortBy.category:
                     products.sort((a, b) =>
                         (categoryMap[a.categoryId] ?? '')
