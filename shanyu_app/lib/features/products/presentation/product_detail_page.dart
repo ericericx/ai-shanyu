@@ -950,16 +950,18 @@ class _ExpandableTextState extends State<_ExpandableText> {
               overflow: _expanded ? null : TextOverflow.ellipsis,
             ),
             if (isOverflow)
-              GestureDetector(
-                onTap: () => setState(() => _expanded = !_expanded),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    _expanded ? '收合' : '...more',
-                    style: TextStyle(
-                      fontSize: widget.style.fontSize ?? 14,
+              Align(
+                alignment: Alignment.center,
+                child: GestureDetector(
+                  onTap: () => setState(() => _expanded = !_expanded),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Icon(
+                      _expanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      size: 22,
                       color: _DetailTokens.brandBrown,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
