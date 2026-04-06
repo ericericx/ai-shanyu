@@ -11,7 +11,7 @@ import '../../models/cms_models.dart';
 abstract final class _BrandTokens {
   static const brandRed = AppDesignTokens.brandRed;
   static const surface = AppDesignTokens.surfaceAlt;
-  static const brandBrownLight = Color(0xFF8D6E63);
+  static const brandBrownLight = Color(0xFF9C1B1B);
   static const textPrimary = AppDesignTokens.textPrimary;
   static const textSecondary = AppDesignTokens.textSecondary;
 

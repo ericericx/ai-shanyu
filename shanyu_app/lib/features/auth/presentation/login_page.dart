@@ -7,8 +7,8 @@ import '../providers/auth_providers.dart';
 // ── 設計 Token（局部，待整合全局 UI Kit） ────────────────────────────────────
 
 abstract final class _AuthColors {
-  static const brandBrown = Color(0xFF5C4033);
-  static const brandBrownLight = Color(0xFF8D6E63);
+  static const brandBrown = Color(0xFFB82020);
+  static const brandBrownLight = Color(0xFF9C1B1B);
   static const surface = Color(0xFFFAF7F4);
   static const inputBorder = Color(0xFFD7CCC8);
   static const errorRed = Color(0xFFC62828);

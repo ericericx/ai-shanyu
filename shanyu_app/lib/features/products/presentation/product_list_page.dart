@@ -17,7 +17,7 @@ abstract final class _ProductListTokens {
   static const surface = Color(0xFFFAF7F4);
   static const textPrimary = Color(0xFF2D2118);
   static const textSecondary = Color(0xFF6D4C41);
-  static const brandBrown = Color(0xFF5C4033);
+  static const brandBrown = Color(0xFFB82020);
   static const preorderBadgeBg = Color(0xFFFF8A65);
   static const preorderBadgeText = Colors.white;
   static const skeletonColor = Color(0xFFE0E0E0);

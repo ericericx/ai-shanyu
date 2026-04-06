@@ -19,11 +19,11 @@ abstract final class _CheckoutTokens {
   static const cardBackground = Colors.white;
   static const textPrimary = Color(0xFF2D2118);
   static const textSecondary = Color(0xFF6D4C41);
-  static const brandBrown = Color(0xFF5C4033);
+  static const brandBrown = Color(0xFFB82020);
   static const dividerColor = Color(0xFFE8E0DA);
   static const sectionHeaderBg = Color(0xFFF3EDE8);
   static const inputBorder = Color(0xFFD7CAC3);
-  static const inputFocusBorder = Color(0xFF5C4033);
+  static const inputFocusBorder = Color(0xFFB82020);
   static const errorColor = Color(0xFFB71C1C);
 
   static const pagePadding = 20.0;

@@ -12,8 +12,8 @@ import '../providers/admin_chat_providers.dart';
 
 abstract final class _AdminChatTokens {
   static const surface = Color(0xFFFAF8F5);
-  static const brandBrown = Color(0xFF5C4033);
-  static const brandBrownLight = Color(0xFF8D6E63);
+  static const brandBrown = Color(0xFFB82020);
+  static const brandBrownLight = Color(0xFF9C1B1B);
   static const textPrimary = Color(0xFF2D2118);
   static const textSecondary = Color(0xFF6D4C41);
   static const divider = Color(0xFFEFEBE9);
@@ -24,7 +24,7 @@ abstract final class _AdminChatTokens {
   static const userBubbleText = Color(0xFF2D2118);
 
   // 氣泡 — 客服（靠右深棕）
-  static const adminBubbleBg = Color(0xFF5C4033);
+  static const adminBubbleBg = Color(0xFFB82020);
   static const adminBubbleText = Colors.white;
 
   static const inputBarBg = Colors.white;

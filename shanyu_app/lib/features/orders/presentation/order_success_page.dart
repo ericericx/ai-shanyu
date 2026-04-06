@@ -9,9 +9,9 @@ abstract final class _SuccessTokens {
   static const surface = Color(0xFFFAF7F4);
   static const textPrimary = Color(0xFF2D2118);
   static const textSecondary = Color(0xFF6D4C41);
-  static const brandBrown = Color(0xFF5C4033);
+  static const brandBrown = Color(0xFFB82020);
   static const dividerColor = Color(0xFFE8E0DA);
-  static const successIconColor = Color(0xFF5C4033);
+  static const successIconColor = Color(0xFFB82020);
   static const orderIdBg = Color(0xFFF3EDE8);
 
   static const pagePadding = 24.0;
