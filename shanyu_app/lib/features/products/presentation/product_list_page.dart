@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_nav_bar.dart';
+import '../models/category_model.dart';
 import '../models/product_models.dart';
 import '../providers/product_providers.dart';
 
@@ -66,14 +67,12 @@ class _ProductListBody extends ConsumerWidget {
     final categoryAsync = ref.watch(categoryByIdProvider(categoryId));
     final productsAsync = ref.watch(productsByCategoryProvider(categoryId));
 
-    final categoryName = categoryAsync.valueOrNull?.name;
-
     return CustomScrollView(
       slivers: [
-        // 分類標題區
+        // 分類 Hero 區
         SliverToBoxAdapter(
-          child: _CategoryHeader(
-            categoryName: categoryName,
+          child: _CategoryHero(
+            category: categoryAsync.valueOrNull,
             isLoading: categoryAsync.isLoading,
           ),
         ),
@@ -99,44 +98,120 @@ class _ProductListBody extends ConsumerWidget {
   }
 }
 
-// ── 分類標題區 ────────────────────────────────────────────────────────────────
+// ── 分類 Hero 區 ─────────────────────────────────────────────────────────────
 
-class _CategoryHeader extends StatelessWidget {
-  const _CategoryHeader({
-    required this.categoryName,
+class _CategoryHero extends StatelessWidget {
+  const _CategoryHero({
+    required this.category,
     required this.isLoading,
   });
 
-  final String? categoryName;
+  final CategoryModel? category;
   final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        _ProductListTokens.pagePadding,
-        24,
-        _ProductListTokens.pagePadding,
-        16,
-      ),
-      child: isLoading
-          ? Container(
-              width: 120,
-              height: 28,
-              decoration: BoxDecoration(
-                color: _ProductListTokens.skeletonColor,
-                borderRadius: BorderRadius.circular(6),
+    if (isLoading) {
+      return Container(
+        height: 200,
+        color: _ProductListTokens.skeletonColor,
+      );
+    }
+
+    final hasCover = category != null && category!.coverImageUrl.isNotEmpty;
+    final hasDesc = category != null && category!.description.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 封面圖 + 標題疊層
+        if (hasCover)
+          Stack(
+            children: [
+              SizedBox(
+                height: 200,
+                width: double.infinity,
+                child: CachedNetworkImage(
+                  imageUrl: category!.coverImageUrl,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Container(
+                    color: _ProductListTokens.surface,
+                  ),
+                ),
               ),
-            )
-          : Text(
-              categoryName ?? '農產列表',
+              // 底部漸層遮罩
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 120,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Color(0xCC000000)],
+                    ),
+                  ),
+                ),
+              ),
+              // 標題文字
+              Positioned(
+                bottom: 16,
+                left: _ProductListTokens.pagePadding,
+                right: _ProductListTokens.pagePadding,
+                child: Text(
+                  category?.name ?? '農產列表',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1.3,
+                    shadows: [
+                      Shadow(color: Color(0x66000000), blurRadius: 8),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          )
+        else
+          // 無封面圖：純文字標題
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              _ProductListTokens.pagePadding, 24,
+              _ProductListTokens.pagePadding, 0,
+            ),
+            child: Text(
+              category?.name ?? '農產列表',
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 28,
                 fontWeight: FontWeight.w700,
                 color: _ProductListTokens.textPrimary,
                 height: 1.3,
               ),
             ),
+          ),
+
+        // 分類描述
+        if (hasDesc)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              _ProductListTokens.pagePadding, 12,
+              _ProductListTokens.pagePadding, 16,
+            ),
+            child: Text(
+              category!.description,
+              style: const TextStyle(
+                fontSize: 15,
+                color: _ProductListTokens.textSecondary,
+                height: 1.6,
+              ),
+            ),
+          )
+        else
+          const SizedBox(height: 16),
+      ],
     );
   }
 }

@@ -241,11 +241,24 @@ class _DetailScrollBody extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 3. 商品名稱 + 預購標籤
+                    // 3. 農產名稱 + 預購標籤
                     _ProductHeading(
                       name: detail.name,
                       isPreorder: detail.isPreorder,
                     ),
+
+                    // 3b. 農產描述
+                    if (detail.description.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        detail.description,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: _DetailTokens.textSecondary,
+                          height: 1.6,
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: _DetailTokens.sectionGap),
 
