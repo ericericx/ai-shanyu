@@ -353,11 +353,19 @@ class _CategoryListTile extends StatelessWidget {
                 ],
               ),
             ),
-            // 操作
-            Switch(
-              value: category.isActive,
-              activeColor: _Tokens.brandBrown,
-              onChanged: onToggleActive,
+            // 顯示/隱藏
+            IconButton(
+              icon: Icon(
+                category.isActive
+                    ? Icons.visibility
+                    : Icons.visibility_off,
+                size: 20,
+              ),
+              color: category.isActive
+                  ? _Tokens.brandBrown
+                  : _Tokens.textSecondary,
+              tooltip: category.isActive ? '隱藏分類' : '顯示分類',
+              onPressed: () => onToggleActive(!category.isActive),
             ),
             IconButton(
               icon: const Icon(Icons.edit_outlined, size: 20),
