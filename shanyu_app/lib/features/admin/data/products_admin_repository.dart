@@ -83,6 +83,7 @@ class AdminProductModel {
     this.growingEndPeriod,
     this.harvestStartPeriod,
     this.harvestEndPeriod,
+    this.showOnTimeline = true,
   });
 
   final String id;
@@ -116,6 +117,9 @@ class AdminProductModel {
   /// 採收期結束旬（1–36，null 表示未設定）
   final int? harvestEndPeriod;
 
+  /// 是否顯示於首頁農產時程表
+  final bool showOnTimeline;
+
   factory AdminProductModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     final scheduledAtTs = data['scheduledAt'] as Timestamp?;
@@ -136,6 +140,7 @@ class AdminProductModel {
       growingEndPeriod: data['growingEndPeriod'] as int?,
       harvestStartPeriod: data['harvestStartPeriod'] as int?,
       harvestEndPeriod: data['harvestEndPeriod'] as int?,
+      showOnTimeline: (data['showOnTimeline'] as bool?) ?? true,
     );
   }
 }
@@ -268,12 +273,14 @@ class ProductsAdminRepository {
     required int growingEndPeriod,
     required int harvestStartPeriod,
     required int harvestEndPeriod,
+    required bool showOnTimeline,
   }) async {
     await _firestore.collection(_kProducts).doc(id).update({
       'growingStartPeriod': growingStartPeriod,
       'growingEndPeriod': growingEndPeriod,
       'harvestStartPeriod': harvestStartPeriod,
       'harvestEndPeriod': harvestEndPeriod,
+      'showOnTimeline': showOnTimeline,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

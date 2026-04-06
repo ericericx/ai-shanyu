@@ -11,11 +11,12 @@ class ProductTimelineRepository {
 
   final FirebaseFirestore _firestore;
 
-  /// 監聽所有 status == 'active' 的商品，依 sortOrder 排序。
+  /// 監聽所有 status == 'active' 且 showOnTimeline == true 的商品。
   Stream<List<TimelineProduct>> watchActiveProducts() {
     return _firestore
         .collection('products')
         .where('status', isEqualTo: 'active')
+        .where('showOnTimeline', isEqualTo: true)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs

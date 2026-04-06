@@ -611,13 +611,14 @@ class _ProductTab extends ConsumerWidget {
       context: context,
       builder: (_) => _EditSeasonsDialog(
         product: product,
-        onSave: (gs, ge, hs, he) async {
+        onSave: (gs, ge, hs, he, showOnTimeline) async {
           await ref.read(_repoProvider).updateProductSeasons(
                 product.id,
                 growingStartPeriod: gs,
                 growingEndPeriod: ge,
                 harvestStartPeriod: hs,
                 harvestEndPeriod: he,
+                showOnTimeline: showOnTimeline,
               );
         },
       ),
@@ -1301,7 +1302,7 @@ class _EditSeasonsDialog extends StatefulWidget {
   const _EditSeasonsDialog({required this.product, required this.onSave});
 
   final AdminProductModel product;
-  final Future<void> Function(int gs, int ge, int hs, int he) onSave;
+  final Future<void> Function(int gs, int ge, int hs, int he, bool showOnTimeline) onSave;
 
   @override
   State<_EditSeasonsDialog> createState() => _EditSeasonsDialogState();
@@ -1312,6 +1313,7 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
   late int _ge;
   late int _hs;
   late int _he;
+  late bool _showOnTimeline;
   bool _isSaving = false;
 
   static final _periods = [
@@ -1329,12 +1331,13 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
     _ge = widget.product.growingEndPeriod ?? 0;
     _hs = widget.product.harvestStartPeriod ?? 0;
     _he = widget.product.harvestEndPeriod ?? 0;
+    _showOnTimeline = widget.product.showOnTimeline;
   }
 
   Future<void> _handleSave() async {
     setState(() => _isSaving = true);
     try {
-      await widget.onSave(_gs, _ge, _hs, _he);
+      await widget.onSave(_gs, _ge, _hs, _he, _showOnTimeline);
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
@@ -1438,6 +1441,22 @@ class _EditSeasonsDialogState extends State<_EditSeasonsDialog> {
                 ],
               )),
             ]),
+
+            const SizedBox(height: 16),
+
+            // 顯示於時程表
+            CheckboxListTile(
+              value: _showOnTimeline,
+              onChanged: (v) => setState(() => _showOnTimeline = v ?? true),
+              title: const Text('顯示於首頁農產時程', style: TextStyle(fontSize: 13)),
+              subtitle: const Text(
+                '既成商品（如茶庫存）可關閉此選項',
+                style: TextStyle(fontSize: 11),
+              ),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
 
             const SizedBox(height: 8),
             const Text(

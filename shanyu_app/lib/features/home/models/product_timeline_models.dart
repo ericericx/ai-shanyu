@@ -55,6 +55,7 @@ class TimelineProduct {
     required this.harvestStartPeriod,
     required this.harvestEndPeriod,
     required this.status,
+    required this.showOnTimeline,
   });
 
   final String id;
@@ -76,6 +77,9 @@ class TimelineProduct {
   /// 'active' | 'draft'
   final String status;
 
+  /// 是否顯示於首頁農產時程表（既成商品如茶庫存可設為 false）
+  final bool showOnTimeline;
+
   factory TimelineProduct.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return TimelineProduct(
@@ -87,6 +91,7 @@ class TimelineProduct {
       harvestStartPeriod: (data['harvestStartPeriod'] as int?) ?? 0,
       harvestEndPeriod: (data['harvestEndPeriod'] as int?) ?? 0,
       status: (data['status'] as String?) ?? 'draft',
+      showOnTimeline: (data['showOnTimeline'] as bool?) ?? true,
     );
   }
 
