@@ -1,10 +1,12 @@
 // lib/features/admin/presentation/products_admin_page.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../products/models/category_model.dart';
 import '../../products/models/product_models.dart';
@@ -593,7 +595,7 @@ class _ProductTab extends ConsumerWidget {
                         crossAxisCount: cols,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 0.58,
+                        childAspectRatio: 0.5,
                       ),
                       itemCount: products.length,
                       itemBuilder: (context, index) {
@@ -608,6 +610,11 @@ class _ProductTab extends ConsumerWidget {
                             product,
                           ),
                           onEditSeasons: () => _showEditSeasonsDialog(
+                            context,
+                            ref,
+                            product,
+                          ),
+                          onEditContent: () => _showEditContentDialog(
                             context,
                             ref,
                             product,
@@ -669,6 +676,28 @@ class _ProductTab extends ConsumerWidget {
                 harvestStartPeriod: hs,
                 harvestEndPeriod: he,
                 showOnTimeline: showOnTimeline,
+              );
+        },
+      ),
+    );
+  }
+
+  void _showEditContentDialog(
+    BuildContext context,
+    WidgetRef ref,
+    AdminProductModel product,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => _EditContentDialog(
+        product: product,
+        onSave: (description, story, imageUrls, coverImageUrl) async {
+          await ref.read(_repoProvider).updateProductContent(
+                product.id,
+                description: description,
+                story: story,
+                imageUrls: imageUrls,
+                coverImageUrl: coverImageUrl,
               );
         },
       ),
@@ -806,12 +835,14 @@ class _ProductCard extends StatelessWidget {
     required this.categoryName,
     required this.onEditStatus,
     required this.onEditSeasons,
+    required this.onEditContent,
   });
 
   final AdminProductModel product;
   final String categoryName;
   final VoidCallback onEditStatus;
   final VoidCallback onEditSeasons;
+  final VoidCallback onEditContent;
 
   @override
   Widget build(BuildContext context) {
@@ -833,9 +864,15 @@ class _ProductCard extends StatelessWidget {
                     product.coverImageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) =>
-                        const _PlaceholderThumb(),
+                        Image.asset(
+                          'assets/images/product_placeholder.jpeg',
+                          fit: BoxFit.contain,
+                        ),
                   )
-                : const _PlaceholderThumb(),
+                : Image.asset(
+                    'assets/images/product_placeholder.jpeg',
+                    fit: BoxFit.contain,
+                  ),
           ),
 
           // 資訊區
@@ -878,6 +915,12 @@ class _ProductCard extends StatelessWidget {
                   icon: Icons.calendar_month_outlined,
                   label: '農產時程',
                   onPressed: onEditSeasons,
+                ),
+                const SizedBox(height: 4),
+                _CardActionButton(
+                  icon: Icons.edit_note_outlined,
+                  label: '編輯內容',
+                  onPressed: onEditContent,
                 ),
               ],
             ),
@@ -992,6 +1035,394 @@ class _CategoryBadge extends StatelessWidget {
           color: _Tokens.brandBrown,
         ),
       ),
+    );
+  }
+}
+
+// ── 編輯狀態 Dialog ───────────────────────────────────────────────────────────
+
+// ── 編輯內容 Dialog ──────────────────────────────────────────────────────────
+
+class _EditContentDialog extends StatefulWidget {
+  const _EditContentDialog({
+    required this.product,
+    required this.onSave,
+  });
+
+  final AdminProductModel product;
+  final Future<void> Function(
+    String description,
+    String story,
+    List<String> imageUrls,
+    String coverImageUrl,
+  ) onSave;
+
+  @override
+  State<_EditContentDialog> createState() => _EditContentDialogState();
+}
+
+class _EditContentDialogState extends State<_EditContentDialog> {
+  late final TextEditingController _descController;
+  late final TextEditingController _storyController;
+  late List<String> _imageUrls;
+  late String _coverImageUrl;
+  bool _isSaving = false;
+  bool _isUploading = false;
+  double _uploadProgress = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _descController = TextEditingController(text: widget.product.description);
+    _storyController = TextEditingController(text: widget.product.story);
+    _imageUrls = List<String>.from(widget.product.imageUrls);
+    _coverImageUrl = widget.product.coverImageUrl;
+  }
+
+  @override
+  void dispose() {
+    _descController.dispose();
+    _storyController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickAndUpload() async {
+    if (_imageUrls.length >= 5) return;
+
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null) return;
+
+    setState(() {
+      _isUploading = true;
+      _uploadProgress = 0;
+    });
+
+    try {
+      final repo = ProductsAdminRepository();
+      final fileName = '${const Uuid().v4()}_${file.name}';
+      final url = await repo.uploadProductImage(
+        file.bytes!,
+        fileName,
+        onProgress: (p) {
+          if (mounted) setState(() => _uploadProgress = p);
+        },
+      );
+      setState(() {
+        _imageUrls.add(url);
+        // 第一張自動設為預覽圖
+        if (_coverImageUrl.isEmpty) _coverImageUrl = url;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('上傳失敗：$e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      final removed = _imageUrls.removeAt(index);
+      if (_coverImageUrl == removed) {
+        _coverImageUrl = _imageUrls.isNotEmpty ? _imageUrls.first : '';
+      }
+    });
+  }
+
+  void _swapImage(int from, int to) {
+    setState(() {
+      final item = _imageUrls.removeAt(from);
+      _imageUrls.insert(to, item);
+    });
+  }
+
+  void _setCover(String url) {
+    setState(() => _coverImageUrl = url);
+  }
+
+  void _previewImage(String url) {
+    showDialog(
+      context: context,
+      builder: (ctx) => GestureDetector(
+        onTap: () => Navigator.of(ctx).pop(),
+        child: Scaffold(
+          backgroundColor: Colors.black87,
+          body: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  child: Image.network(url),
+                ),
+              ),
+              Positioned(
+                top: 16,
+                right: 16,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleSave() async {
+    setState(() => _isSaving = true);
+    try {
+      await widget.onSave(
+        _descController.text.trim(),
+        _storyController.text.trim(),
+        _imageUrls,
+        _coverImageUrl,
+      );
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('儲存失敗：$e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: Text('編輯內容 — ${widget.product.name}'),
+      content: SizedBox(
+        width: 560,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 描述
+              TextFormField(
+                controller: _descController,
+                decoration: const InputDecoration(
+                  labelText: '商品描述',
+                  hintText: '簡短描述商品特色',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+                minLines: 2,
+                maxLines: 4,
+              ),
+              const SizedBox(height: 16),
+
+              // 故事
+              TextFormField(
+                controller: _storyController,
+                decoration: const InputDecoration(
+                  labelText: '品牌故事 / 產品故事',
+                  hintText: '產地背景、種植理念、風味描述...',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+                minLines: 5,
+                maxLines: null,
+              ),
+              const SizedBox(height: 20),
+
+              // 圖片區標題
+              Row(
+                children: [
+                  Text(
+                    '展示圖片',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${_imageUrls.length}/5',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '建議比例 1:1（800×800 px）',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // 圖片列表
+              if (_imageUrls.isNotEmpty)
+                ...List.generate(_imageUrls.length, (i) {
+                  final url = _imageUrls[i];
+                  final isCover = url == _coverImageUrl;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        // 縮圖（點擊預覽）
+                        GestureDetector(
+                          onTap: () => _previewImage(url),
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.network(
+                                url,
+                                width: 64,
+                                height: 64,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 64,
+                                  height: 64,
+                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  child: const Icon(Icons.broken_image_outlined),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // 預覽圖標記
+                        if (isCover)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _Tokens.statusActiveBg,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.star,
+                                    size: 12, color: _Tokens.statusActive),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '預覽圖',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: _Tokens.statusActive,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          TextButton(
+                            onPressed: () => _setCover(url),
+                            style: TextButton.styleFrom(
+                              textStyle: const TextStyle(fontSize: 11),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                              ),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('設為預覽圖'),
+                          ),
+                        const Spacer(),
+                        // 上移
+                        IconButton(
+                          onPressed:
+                              i == 0 ? null : () => _swapImage(i, i - 1),
+                          icon: const Icon(Icons.keyboard_arrow_up, size: 20),
+                          visualDensity: VisualDensity.compact,
+                          tooltip: '上移',
+                        ),
+                        // 下移
+                        IconButton(
+                          onPressed: i == _imageUrls.length - 1
+                              ? null
+                              : () => _swapImage(i, i + 1),
+                          icon:
+                              const Icon(Icons.keyboard_arrow_down, size: 20),
+                          visualDensity: VisualDensity.compact,
+                          tooltip: '下移',
+                        ),
+                        // 刪除
+                        IconButton(
+                          onPressed: () => _removeImage(i),
+                          icon: Icon(Icons.delete_outline,
+                              size: 20, color: theme.colorScheme.error),
+                          visualDensity: VisualDensity.compact,
+                          tooltip: '刪除',
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+
+              // 上傳進度
+              if (_isUploading)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Column(
+                    children: [
+                      LinearProgressIndicator(value: _uploadProgress),
+                      const SizedBox(height: 4),
+                      Text(
+                        '上傳中 ${(_uploadProgress * 100).toInt()}%',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+
+              // 新增圖片按鈕
+              OutlinedButton.icon(
+                onPressed: _imageUrls.length >= 5 || _isUploading
+                    ? null
+                    : _pickAndUpload,
+                icon: const Icon(Icons.add_photo_alternate_outlined),
+                label: Text(
+                  _imageUrls.length >= 5 ? '已達上限（5 張）' : '新增圖片',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: _isSaving
+          ? [
+              SizedBox(
+                width: 200,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const LinearProgressIndicator(),
+                    const SizedBox(height: 4),
+                    Text('儲存中...', style: theme.textTheme.bodySmall),
+                  ],
+                ),
+              ),
+            ]
+          : [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: _handleSave,
+                child: const Text('儲存'),
+              ),
+            ],
     );
   }
 }

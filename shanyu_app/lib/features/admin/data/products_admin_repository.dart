@@ -1,6 +1,9 @@
 // lib/features/admin/data/products_admin_repository.dart
 
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../products/models/category_model.dart';
 import '../../products/models/product_models.dart';
@@ -85,6 +88,8 @@ class AdminProductModel {
     this.harvestEndPeriod,
     this.showOnTimeline = true,
     this.updatedAt,
+    this.story = '',
+    this.imageUrls = const [],
   });
 
   final String id;
@@ -124,6 +129,12 @@ class AdminProductModel {
   /// 最後更新時間
   final DateTime? updatedAt;
 
+  /// 品牌故事 / 產品故事（長文）
+  final String story;
+
+  /// 展示圖片列表（至多 5 張）
+  final List<String> imageUrls;
+
   factory AdminProductModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     final scheduledAtTs = data['scheduledAt'] as Timestamp?;
@@ -146,6 +157,11 @@ class AdminProductModel {
       harvestEndPeriod: data['harvestEndPeriod'] as int?,
       showOnTimeline: (data['showOnTimeline'] as bool?) ?? true,
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      story: (data['story'] as String?) ?? '',
+      imageUrls: (data['imageUrls'] as List<dynamic>?)
+              ?.whereType<String>()
+              .toList() ??
+          const [],
     );
   }
 }
@@ -288,5 +304,55 @@ class ProductsAdminRepository {
       'showOnTimeline': showOnTimeline,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  /// 更新商品內容（描述、故事、圖片、預覽圖）。
+  Future<void> updateProductContent(
+    String id, {
+    required String description,
+    required String story,
+    required List<String> imageUrls,
+    required String coverImageUrl,
+  }) async {
+    await _firestore.collection(_kProducts).doc(id).update({
+      'description': description,
+      'story': story,
+      'imageUrls': imageUrls,
+      'coverImageUrl': coverImageUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// 上傳商品圖片至 Firebase Storage `products/<fileName>`，回傳下載 URL。
+  Future<String> uploadProductImage(
+    Uint8List bytes,
+    String fileName, {
+    void Function(double progress)? onProgress,
+  }) async {
+    final ref = FirebaseStorage.instance.ref('products/$fileName');
+    final uploadTask = ref.putData(
+      bytes,
+      SettableMetadata(contentType: _inferContentType(fileName)),
+    );
+
+    if (onProgress != null) {
+      uploadTask.snapshotEvents.listen((snapshot) {
+        if (snapshot.totalBytes > 0) {
+          onProgress(snapshot.bytesTransferred / snapshot.totalBytes);
+        }
+      });
+    }
+
+    final snapshot = await uploadTask;
+    return snapshot.ref.getDownloadURL();
+  }
+
+  String _inferContentType(String fileName) {
+    final lower = fileName.toLowerCase();
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.gif')) return 'image/gif';
+    return 'application/octet-stream';
   }
 }
