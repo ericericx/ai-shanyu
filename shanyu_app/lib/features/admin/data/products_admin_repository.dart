@@ -84,6 +84,7 @@ class AdminProductModel {
     this.harvestStartPeriod,
     this.harvestEndPeriod,
     this.showOnTimeline = true,
+    this.updatedAt,
   });
 
   final String id;
@@ -120,6 +121,9 @@ class AdminProductModel {
   /// 是否顯示於首頁農產時程表
   final bool showOnTimeline;
 
+  /// 最後更新時間
+  final DateTime? updatedAt;
+
   factory AdminProductModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     final scheduledAtTs = data['scheduledAt'] as Timestamp?;
@@ -141,6 +145,7 @@ class AdminProductModel {
       harvestStartPeriod: data['harvestStartPeriod'] as int?,
       harvestEndPeriod: data['harvestEndPeriod'] as int?,
       showOnTimeline: (data['showOnTimeline'] as bool?) ?? true,
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
     );
   }
 }

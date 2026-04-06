@@ -55,6 +55,12 @@ final _allProductsProvider =
 final _selectedCategoryFilterProvider =
     StateProvider<String?>((ref) => null);
 
+/// 商品排序方式
+enum _ProductSortBy { name, status, category, updatedAt }
+
+final _productSortByProvider =
+    StateProvider<_ProductSortBy>((ref) => _ProductSortBy.name);
+
 // ── ProductsAdminPage ─────────────────────────────────────────────────────────
 
 /// 商品管理後台頁面（路由：`/admin/products`）。
@@ -483,6 +489,7 @@ class _ProductTab extends ConsumerWidget {
     final categoriesAsync = ref.watch(_allCategoriesProvider);
     final productsAsync = ref.watch(_allProductsProvider);
     final selectedCategoryId = ref.watch(_selectedCategoryFilterProvider);
+    final sortBy = ref.watch(_productSortByProvider);
 
     return Scaffold(
       backgroundColor: _Tokens.surface,
@@ -507,6 +514,45 @@ class _ProductTab extends ConsumerWidget {
             },
           ),
 
+          // 排序列
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                Text('排序', style: TextStyle(
+                  fontSize: 12, color: _Tokens.textSecondary)),
+                const SizedBox(width: 8),
+                SegmentedButton<_ProductSortBy>(
+                  segments: const [
+                    ButtonSegment(
+                      value: _ProductSortBy.name,
+                      label: Text('名稱', style: TextStyle(fontSize: 12)),
+                    ),
+                    ButtonSegment(
+                      value: _ProductSortBy.status,
+                      label: Text('狀態', style: TextStyle(fontSize: 12)),
+                    ),
+                    ButtonSegment(
+                      value: _ProductSortBy.category,
+                      label: Text('分類', style: TextStyle(fontSize: 12)),
+                    ),
+                    ButtonSegment(
+                      value: _ProductSortBy.updatedAt,
+                      label: Text('更新時間', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                  selected: {sortBy},
+                  onSelectionChanged: (v) =>
+                      ref.read(_productSortByProvider.notifier).state = v.first,
+                  style: ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // 商品列表
           Expanded(
             child: productsAsync.when(
@@ -519,12 +565,33 @@ class _ProductTab extends ConsumerWidget {
                 ),
               ),
               data: (allProducts) {
-                final products = selectedCategoryId == null
-                    ? allProducts
+                var products = selectedCategoryId == null
+                    ? allProducts.toList()
                     : allProducts
                         .where(
                             (p) => p.categoryId == selectedCategoryId)
                         .toList();
+
+                // 排序
+                final categoryMap = {
+                  for (final c
+                      in categoriesAsync.valueOrNull ?? <AdminCategoryModel>[])
+                    c.id: c.name,
+                };
+                switch (sortBy) {
+                  case _ProductSortBy.name:
+                    products.sort((a, b) => a.name.compareTo(b.name));
+                  case _ProductSortBy.status:
+                    products.sort((a, b) => a.status.compareTo(b.status));
+                  case _ProductSortBy.category:
+                    products.sort((a, b) =>
+                        (categoryMap[a.categoryId] ?? '')
+                            .compareTo(categoryMap[b.categoryId] ?? ''));
+                  case _ProductSortBy.updatedAt:
+                    products.sort((a, b) =>
+                        (b.updatedAt ?? DateTime(2000))
+                            .compareTo(a.updatedAt ?? DateTime(2000)));
+                }
 
                 if (products.isEmpty) {
                   return const Center(
@@ -535,12 +602,6 @@ class _ProductTab extends ConsumerWidget {
                     ),
                   );
                 }
-
-                final categoryMap = {
-                  for (final c
-                      in categoriesAsync.valueOrNull ?? <AdminCategoryModel>[])
-                    c.id: c.name,
-                };
 
                 return ListView.separated(
                   padding:
