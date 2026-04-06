@@ -1498,6 +1498,8 @@ class _VariantsDialogState extends State<_VariantsDialog> {
   final _repo = ProductsAdminRepository();
   late final Stream<List<AdminVariantModel>> _stream;
 
+  static const _unitPresets = ['盒', '袋', '兩', '斤', '包', '罐', '粒裝'];
+
   // 新增表單
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
@@ -1505,6 +1507,8 @@ class _VariantsDialogState extends State<_VariantsDialog> {
   final _comparePriceCtrl = TextEditingController();
   final _stockCtrl = TextEditingController();
   final _unitCtrl = TextEditingController();
+  final _noteCtrl = TextEditingController();
+  String? _selectedUnit;
   bool _isPreorder = false;
   bool _isAdding = false;
 
@@ -1515,6 +1519,8 @@ class _VariantsDialogState extends State<_VariantsDialog> {
   final _editComparePriceCtrl = TextEditingController();
   final _editStockCtrl = TextEditingController();
   final _editUnitCtrl = TextEditingController();
+  final _editNoteCtrl = TextEditingController();
+  String? _editSelectedUnit;
   bool _editIsPreorder = false;
   bool _isSavingEdit = false;
 
@@ -1531,11 +1537,13 @@ class _VariantsDialogState extends State<_VariantsDialog> {
     _comparePriceCtrl.dispose();
     _stockCtrl.dispose();
     _unitCtrl.dispose();
+    _noteCtrl.dispose();
     _editNameCtrl.dispose();
     _editPriceCtrl.dispose();
     _editComparePriceCtrl.dispose();
     _editStockCtrl.dispose();
     _editUnitCtrl.dispose();
+    _editNoteCtrl.dispose();
     super.dispose();
   }
 
@@ -1546,8 +1554,15 @@ class _VariantsDialogState extends State<_VariantsDialog> {
       _editPriceCtrl.text = v.price.toString();
       _editComparePriceCtrl.text = v.comparePrice?.toString() ?? '';
       _editStockCtrl.text = v.stock.toString();
-      _editUnitCtrl.text = v.unit;
       _editIsPreorder = v.isPreorder;
+      _editNoteCtrl.text = v.note;
+      if (_unitPresets.contains(v.unit)) {
+        _editSelectedUnit = v.unit;
+        _editUnitCtrl.text = '';
+      } else {
+        _editSelectedUnit = '自填';
+        _editUnitCtrl.text = v.unit;
+      }
     });
   }
 
@@ -1567,8 +1582,11 @@ class _VariantsDialogState extends State<_VariantsDialog> {
         price: price,
         comparePrice: int.tryParse(_editComparePriceCtrl.text),
         stock: int.tryParse(_editStockCtrl.text) ?? 0,
-        unit: _editUnitCtrl.text.trim(),
+        unit: _editSelectedUnit == '自填'
+            ? _editUnitCtrl.text.trim()
+            : (_editSelectedUnit ?? ''),
         isPreorder: _editIsPreorder,
+        note: _editNoteCtrl.text.trim(),
       );
       setState(() => _editingId = null);
     } catch (e) {
@@ -1593,15 +1611,22 @@ class _VariantsDialogState extends State<_VariantsDialog> {
         price: int.parse(_priceCtrl.text),
         comparePrice: int.tryParse(_comparePriceCtrl.text),
         stock: int.tryParse(_stockCtrl.text) ?? 0,
-        unit: _unitCtrl.text.trim(),
+        unit: _selectedUnit == '自填'
+            ? _unitCtrl.text.trim()
+            : (_selectedUnit ?? ''),
         isPreorder: _isPreorder,
+        note: _noteCtrl.text.trim(),
       );
       _nameCtrl.clear();
       _priceCtrl.clear();
       _comparePriceCtrl.clear();
       _stockCtrl.clear();
       _unitCtrl.clear();
-      setState(() => _isPreorder = false);
+      _noteCtrl.clear();
+      setState(() {
+        _isPreorder = false;
+        _selectedUnit = null;
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1711,20 +1736,39 @@ class _VariantsDialogState extends State<_VariantsDialog> {
                         const SizedBox(width: 8),
                         Expanded(
                           flex: 2,
-                          child: TextFormField(
-                            controller: _unitCtrl,
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedUnit,
                             decoration: const InputDecoration(
                               labelText: '單位',
-                              hintText: '罐/盒/斤',
                               border: OutlineInputBorder(),
                               isDense: true,
                             ),
-                            validator: (v) =>
-                                (v == null || v.trim().isEmpty) ? '必填' : null,
+                            items: [
+                              ..._unitPresets.map((u) =>
+                                  DropdownMenuItem(value: u, child: Text(u))),
+                              const DropdownMenuItem(
+                                  value: '自填', child: Text('自填...')),
+                            ],
+                            onChanged: (v) => setState(() => _selectedUnit = v),
+                            validator: (v) => v == null ? '必填' : null,
                           ),
                         ),
                       ],
                     ),
+                    if (_selectedUnit == '自填') ...[
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _unitCtrl,
+                        decoration: const InputDecoration(
+                          labelText: '自訂單位',
+                          hintText: '輸入自訂單位',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        validator: (v) =>
+                            (v == null || v.trim().isEmpty) ? '必填' : null,
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -1782,6 +1826,16 @@ class _VariantsDialogState extends State<_VariantsDialog> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _noteCtrl,
+                      decoration: const InputDecoration(
+                        labelText: '備註（選填）',
+                        hintText: '如：限量、季節限定',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -1868,6 +1922,19 @@ class _VariantsDialogState extends State<_VariantsDialog> {
                     ],
                   ],
                 ),
+                if (v.note.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    v.note,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: _Tokens.textSecondary,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
@@ -1939,17 +2006,35 @@ class _VariantsDialogState extends State<_VariantsDialog> {
               const SizedBox(width: 8),
               Expanded(
                 flex: 2,
-                child: TextField(
-                  controller: _editUnitCtrl,
+                child: DropdownButtonFormField<String>(
+                  value: _editSelectedUnit,
                   decoration: const InputDecoration(
                     labelText: '單位',
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
+                  items: [
+                    ..._unitPresets.map((u) =>
+                        DropdownMenuItem(value: u, child: Text(u))),
+                    const DropdownMenuItem(
+                        value: '自填', child: Text('自填...')),
+                  ],
+                  onChanged: (v) => setState(() => _editSelectedUnit = v),
                 ),
               ),
             ],
           ),
+          if (_editSelectedUnit == '自填') ...[
+            const SizedBox(height: 8),
+            TextField(
+              controller: _editUnitCtrl,
+              decoration: const InputDecoration(
+                labelText: '自訂單位',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Row(
             children: [
@@ -1994,6 +2079,15 @@ class _VariantsDialogState extends State<_VariantsDialog> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _editNoteCtrl,
+            decoration: const InputDecoration(
+              labelText: '備註（選填）',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
           ),
           const SizedBox(height: 8),
           Row(

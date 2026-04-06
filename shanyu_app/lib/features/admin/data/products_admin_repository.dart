@@ -178,6 +178,7 @@ class AdminVariantModel {
     required this.stock,
     required this.unit,
     this.isPreorder = false,
+    this.note = '',
   });
 
   final String id;
@@ -187,6 +188,7 @@ class AdminVariantModel {
   final int stock;
   final String unit;
   final bool isPreorder;
+  final String note;
 
   factory AdminVariantModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -198,6 +200,7 @@ class AdminVariantModel {
       stock: (data['stock'] as int?) ?? 0,
       unit: (data['unit'] as String?) ?? '',
       isPreorder: (data['isPreorder'] as bool?) ?? false,
+      note: (data['note'] as String?) ?? '',
     );
   }
 }
@@ -404,6 +407,7 @@ class ProductsAdminRepository {
     required int stock,
     required String unit,
     bool isPreorder = false,
+    String note = '',
   }) async {
     await _variantsRef(productId).add({
       'name': name,
@@ -412,6 +416,7 @@ class ProductsAdminRepository {
       'stock': stock,
       'unit': unit,
       'isPreorder': isPreorder,
+      'note': note,
       'imageUrls': <String>[],
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -428,6 +433,7 @@ class ProductsAdminRepository {
     required int stock,
     required String unit,
     bool isPreorder = false,
+    String note = '',
   }) async {
     await _variantsRef(productId).doc(variantId).update({
       'name': name,
@@ -436,6 +442,7 @@ class ProductsAdminRepository {
       'stock': stock,
       'unit': unit,
       'isPreorder': isPreorder,
+      'note': note,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
