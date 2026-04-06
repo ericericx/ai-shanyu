@@ -242,38 +242,37 @@ class _MobileLayout extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.home_outlined),
+          tooltip: '返回首頁',
+          onPressed: () => context.go(AppRoutes.home),
+        ),
+        title: const Text('山裕後台'),
+        titleTextStyle: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
+        ),
+      ),
       body: navigationShell,
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Material(
-            color: colorScheme.surfaceContainerLow,
-            child: ListTile(
-              leading: const Icon(Icons.home_outlined),
-              title: const Text('返回首頁'),
-              dense: true,
-              onTap: () => context.go(AppRoutes.home),
-            ),
-          ),
-          NavigationBar(
-            selectedIndex: navigationShell.currentIndex,
-            onDestinationSelected: (index) {
-              navigationShell.goBranch(
-                index,
-                initialLocation: index == navigationShell.currentIndex,
-              );
-            },
-            destinations: _kNavItems
-                .map(
-                  (item) => NavigationDestination(
-                    icon: Icon(item.icon),
-                    selectedIcon: Icon(item.selectedIcon),
-                    label: item.label,
-                  ),
-                )
-                .toList(),
-          ),
-        ],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: navigationShell.currentIndex,
+        onDestinationSelected: (index) {
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == navigationShell.currentIndex,
+          );
+        },
+        destinations: _kNavItems
+            .map(
+              (item) => NavigationDestination(
+                icon: Icon(item.icon),
+                selectedIcon: Icon(item.selectedIcon),
+                label: item.label,
+              ),
+            )
+            .toList(),
       ),
     );
   }
