@@ -8,13 +8,13 @@ import 'package:uuid/uuid.dart';
 
 import '../../home/models/cms_models.dart';
 import '../../home/providers/cms_providers.dart';
+import '../../products/providers/product_providers.dart';
 import '../data/cms_admin_repository.dart';
 import '../providers/admin_providers.dart';
 
 // ── 常數 ──────────────────────────────────────────────────────────────────────
 
 const _kContentMaxWidth = 900.0;
-const _kThumbnailSize = 72.0;
 
 // ── CmsPage ────────────────────────────────────────────────────────────────────
 
@@ -453,6 +453,10 @@ class _ImageErrorPlaceholder extends StatelessWidget {
   }
 }
 
+// ── Banner 連結類型 ──────────────────────────────────────────────────────────
+
+enum _BannerLinkType { none, url, category, product }
+
 // ── _BannerFormDialog（新增 / 編輯共用）────────────────────────────────────────
 
 class _BannerFormDialog extends ConsumerStatefulWidget {
@@ -474,6 +478,11 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
   String? _pickedFileName;
   bool _isUploading = false;
 
+  _BannerLinkType _linkType = _BannerLinkType.none;
+  String? _selectedCategoryId;
+  String? _selectedProductId;
+  String? _productCategoryId; // 商品所屬分類（用於組路由）
+
   bool get _isEditing => widget.existing != null;
 
   @override
@@ -481,7 +490,49 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
     super.initState();
     if (_isEditing) {
       _titleController.text = widget.existing!.title ?? '';
-      _linkController.text = widget.existing!.linkUrl ?? '';
+      _initLinkType(widget.existing!.linkUrl);
+    }
+  }
+
+  void _initLinkType(String? url) {
+    if (url == null || url.isEmpty) {
+      _linkType = _BannerLinkType.none;
+      return;
+    }
+    // /products/:catId/:prodId
+    final productMatch = RegExp(r'^/products/([^/]+)/([^/]+)$').firstMatch(url);
+    if (productMatch != null) {
+      _linkType = _BannerLinkType.product;
+      _productCategoryId = productMatch.group(1);
+      _selectedProductId = productMatch.group(2);
+      return;
+    }
+    // /products/:catId
+    final categoryMatch = RegExp(r'^/products/([^/]+)$').firstMatch(url);
+    if (categoryMatch != null) {
+      _linkType = _BannerLinkType.category;
+      _selectedCategoryId = categoryMatch.group(1);
+      return;
+    }
+    _linkType = _BannerLinkType.url;
+    _linkController.text = url;
+  }
+
+  String? get _resolvedLinkUrl {
+    switch (_linkType) {
+      case _BannerLinkType.none:
+        return null;
+      case _BannerLinkType.url:
+        final text = _linkController.text.trim();
+        return text.isEmpty ? null : text;
+      case _BannerLinkType.category:
+        return _selectedCategoryId != null
+            ? '/products/$_selectedCategoryId'
+            : null;
+      case _BannerLinkType.product:
+        return _selectedProductId != null && _productCategoryId != null
+            ? '/products/$_productCategoryId/$_selectedProductId'
+            : null;
     }
   }
 
@@ -495,6 +546,7 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     return AlertDialog(
       title: Text(_isEditing ? '編輯 Banner' : '新增 Banner'),
@@ -592,15 +644,107 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? '請填寫標題' : null,
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _linkController,
-                decoration: const InputDecoration(
-                  labelText: '連結 URL（選填）',
-                  hintText: '例：/products/peach',
-                  border: OutlineInputBorder(),
-                ),
+              const SizedBox(height: 16),
+
+              // ── 連結類型選擇 ──
+              Text('點擊連結', style: theme.textTheme.labelLarge),
+              const SizedBox(height: 8),
+              SegmentedButton<_BannerLinkType>(
+                segments: const [
+                  ButtonSegment(
+                    value: _BannerLinkType.none,
+                    label: Text('無'),
+                    icon: Icon(Icons.block, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: _BannerLinkType.category,
+                    label: Text('分類'),
+                    icon: Icon(Icons.category_outlined, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: _BannerLinkType.product,
+                    label: Text('商品'),
+                    icon: Icon(Icons.shopping_bag_outlined, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: _BannerLinkType.url,
+                    label: Text('自訂'),
+                    icon: Icon(Icons.link, size: 16),
+                  ),
+                ],
+                selected: {_linkType},
+                onSelectionChanged: (v) => setState(() {
+                  _linkType = v.first;
+                }),
               ),
+              const SizedBox(height: 12),
+
+              // ── 依類型顯示對應欄位 ──
+              if (_linkType == _BannerLinkType.url)
+                TextFormField(
+                  controller: _linkController,
+                  decoration: const InputDecoration(
+                    labelText: '連結 URL',
+                    hintText: '例：https://example.com',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              if (_linkType == _BannerLinkType.category)
+                categoriesAsync.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (_, __) => const Text('無法載入分類'),
+                  data: (categories) => DropdownButtonFormField<String>(
+                    initialValue: _selectedCategoryId,
+                    decoration: const InputDecoration(
+                      labelText: '選擇分類',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: categories
+                        .map((c) => DropdownMenuItem(
+                              value: c.id,
+                              child: Text(c.name),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setState(() => _selectedCategoryId = v),
+                    validator: (v) => v == null ? '請選擇分類' : null,
+                  ),
+                ),
+              if (_linkType == _BannerLinkType.product)
+                categoriesAsync.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (_, __) => const Text('無法載入分類'),
+                  data: (categories) => Column(
+                    children: [
+                      DropdownButtonFormField<String>(
+                        initialValue: _productCategoryId,
+                        decoration: const InputDecoration(
+                          labelText: '商品所屬分類',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: categories
+                            .map((c) => DropdownMenuItem(
+                                  value: c.id,
+                                  child: Text(c.name),
+                                ))
+                            .toList(),
+                        onChanged: (v) => setState(() {
+                          _productCategoryId = v;
+                          _selectedProductId = null;
+                        }),
+                        validator: (v) => v == null ? '請選擇分類' : null,
+                      ),
+                      if (_productCategoryId != null) ...[
+                        const SizedBox(height: 12),
+                        _ProductDropdown(
+                          categoryId: _productCategoryId!,
+                          selectedProductId: _selectedProductId,
+                          onChanged: (v) =>
+                              setState(() => _selectedProductId = v),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -669,9 +813,7 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
         id: _isEditing ? widget.existing!.id : const Uuid().v4(),
         imageUrl: imageUrl,
         title: _titleController.text.trim(),
-        linkUrl: _linkController.text.trim().isEmpty
-            ? null
-            : _linkController.text.trim(),
+        linkUrl: _resolvedLinkUrl,
         sortOrder: _isEditing ? widget.existing!.sortOrder : 0,
         isActive: _isEditing ? widget.existing!.isActive : true,
       );
@@ -692,6 +834,50 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
+  }
+}
+
+// ── _ProductDropdown（依分類載入商品列表）─────────────────────────────────────
+
+class _ProductDropdown extends ConsumerWidget {
+  const _ProductDropdown({
+    required this.categoryId,
+    required this.selectedProductId,
+    required this.onChanged,
+  });
+
+  final String categoryId;
+  final String? selectedProductId;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final productsAsync = ref.watch(productsByCategoryProvider(categoryId));
+
+    return productsAsync.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (_, __) => const Text('無法載入商品'),
+      data: (products) {
+        if (products.isEmpty) {
+          return const Text('此分類尚無商品');
+        }
+        return DropdownButtonFormField<String>(
+          initialValue: selectedProductId,
+          decoration: const InputDecoration(
+            labelText: '選擇商品',
+            border: OutlineInputBorder(),
+          ),
+          items: products
+              .map((p) => DropdownMenuItem(
+                    value: p.id,
+                    child: Text(p.name),
+                  ))
+              .toList(),
+          onChanged: onChanged,
+          validator: (v) => v == null ? '請選擇商品' : null,
+        );
+      },
+    );
   }
 }
 
