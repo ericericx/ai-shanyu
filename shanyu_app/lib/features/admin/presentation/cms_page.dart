@@ -84,25 +84,20 @@ class _BannerManagementTabState extends ConsumerState<_BannerManagementTab> {
                 Expanded(
                   child: banners.isEmpty
                       ? const _EmptyBannerPlaceholder()
-                      : ReorderableListView(
+                      : ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          onReorder: (oldIndex, newIndex) {
-                            setState(() {
-                              final list = List<BannerItem>.from(banners);
-                              if (newIndex > oldIndex) newIndex--;
-                              final item = list.removeAt(oldIndex);
-                              list.insert(newIndex, item);
-                              _localBanners = list;
-                            });
+                          itemCount: banners.length,
+                          itemBuilder: (context, index) {
+                            return _BannerListTile(
+                              key: ValueKey(banners[index].id),
+                              banner: banners[index],
+                              isFirst: index == 0,
+                              isLast: index == banners.length - 1,
+                              onMoveUp: () => _swapBanners(banners, index, index - 1),
+                              onMoveDown: () => _swapBanners(banners, index, index + 1),
+                              onDelete: () => _deleteBanner(banners, index),
+                            );
                           },
-                          children: [
-                            for (int i = 0; i < banners.length; i++)
-                              _BannerListTile(
-                                key: ValueKey(banners[i].id),
-                                banner: banners[i],
-                                onDelete: () => _deleteBanner(banners, i),
-                              ),
-                          ],
                         ),
                 ),
                 _BannerActionBar(
@@ -124,6 +119,15 @@ class _BannerManagementTabState extends ConsumerState<_BannerManagementTab> {
     setState(() {
       final list = List<BannerItem>.from(banners);
       list.removeAt(index);
+      _localBanners = list;
+    });
+  }
+
+  void _swapBanners(List<BannerItem> banners, int from, int to) {
+    setState(() {
+      final list = List<BannerItem>.from(banners);
+      final item = list.removeAt(from);
+      list.insert(to, item);
       _localBanners = list;
     });
   }
@@ -188,10 +192,18 @@ class _BannerListTile extends StatelessWidget {
   const _BannerListTile({
     super.key,
     required this.banner,
+    required this.isFirst,
+    required this.isLast,
+    required this.onMoveUp,
+    required this.onMoveDown,
     required this.onDelete,
   });
 
   final BannerItem banner;
+  final bool isFirst;
+  final bool isLast;
+  final VoidCallback onMoveUp;
+  final VoidCallback onMoveDown;
   final VoidCallback onDelete;
 
   @override
@@ -247,7 +259,7 @@ class _BannerListTile extends StatelessWidget {
                 ],
               ),
             ),
-            // 右側：工具欄（拖曳 + 刪除）
+            // 右側：工具欄（上移 / 下移 / 刪除）
             Container(
               width: 48,
               decoration: BoxDecoration(
@@ -261,11 +273,20 @@ class _BannerListTile extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.drag_handle,
-                    color: theme.colorScheme.outlineVariant,
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_up),
+                    onPressed: isFirst ? null : onMoveUp,
+                    tooltip: '上移',
+                    iconSize: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  const SizedBox(height: 8),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_down),
+                    onPressed: isLast ? null : onMoveDown,
+                    tooltip: '下移',
+                    iconSize: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   IconButton(
                     icon: Icon(Icons.delete_outline,
                         color: theme.colorScheme.error),
