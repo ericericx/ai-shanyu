@@ -605,8 +605,26 @@ class _BrandStoryTabState extends ConsumerState<_BrandStoryTab> {
   bool _isSaving = false;
   bool _isUploadingImage = false;
 
+  // 追蹤原始值以判斷是否有變更
+  String _originalTitle = '';
+  String _originalContent = '';
+  String _originalImageUrl = '';
+  bool _isDirty = false;
+
+  void _checkDirty() {
+    final dirty = _titleController.text != _originalTitle ||
+        _contentController.text != _originalContent ||
+        _imageUrlController.text != _originalImageUrl;
+    if (dirty != _isDirty) {
+      setState(() => _isDirty = dirty);
+    }
+  }
+
   @override
   void dispose() {
+    _titleController.removeListener(_checkDirty);
+    _contentController.removeListener(_checkDirty);
+    _imageUrlController.removeListener(_checkDirty);
     _titleController.dispose();
     _contentController.dispose();
     _imageUrlController.dispose();
@@ -621,11 +639,17 @@ class _BrandStoryTabState extends ConsumerState<_BrandStoryTab> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('讀取失敗：$err')),
       data: (cms) {
-        // 首次載入時填入初始值
+        // 首次載入時填入初始值並記錄原始值
         if (!_initialized && cms != null) {
           _titleController.text = cms.brandStoryTitle;
           _contentController.text = cms.brandStoryContent;
           _imageUrlController.text = cms.brandStoryImageUrl;
+          _originalTitle = cms.brandStoryTitle;
+          _originalContent = cms.brandStoryContent;
+          _originalImageUrl = cms.brandStoryImageUrl;
+          _titleController.addListener(_checkDirty);
+          _contentController.addListener(_checkDirty);
+          _imageUrlController.addListener(_checkDirty);
           _initialized = true;
         }
 
@@ -691,7 +715,7 @@ class _BrandStoryTabState extends ConsumerState<_BrandStoryTab> {
                     ],
                     const SizedBox(height: 24),
                     FilledButton.icon(
-                      onPressed: _isSaving ? null : _save,
+                      onPressed: _isSaving || !_isDirty ? null : _save,
                       icon: _isSaving
                           ? const SizedBox(
                               width: 16,
@@ -753,6 +777,11 @@ class _BrandStoryTabState extends ConsumerState<_BrandStoryTab> {
         imageUrl: _imageUrlController.text.trim(),
       );
       if (mounted) {
+        // 儲存成功後更新原始值，重置 dirty 狀態
+        _originalTitle = _titleController.text.trim();
+        _originalContent = _contentController.text.trim();
+        _originalImageUrl = _imageUrlController.text.trim();
+        _isDirty = false;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('品牌故事已儲存')),
         );
