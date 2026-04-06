@@ -514,7 +514,7 @@ class _ProductTab extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          // 分類篩選列
+          // 分類篩選列 + 排序按鈕
           _CategoryFilterBar(
             categoriesAsync: categoriesAsync,
             selectedId: selectedCategoryId,
@@ -523,31 +523,10 @@ class _ProductTab extends ConsumerWidget {
                   .read(_selectedCategoryFilterProvider.notifier)
                   .state = id;
             },
-          ),
-
-          // 排序按鈕（點擊循環切換）
-          Padding(
-            padding: const EdgeInsets.only(left: 12, right: 16, top: 4),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => ref
-                      .read(_productSortByProvider.notifier)
-                      .state = sortBy.next,
-                  icon: Icon(sortBy.icon, size: 20),
-                  tooltip: sortBy.label,
-                  color: _Tokens.brandBrown,
-                  visualDensity: VisualDensity.compact,
-                ),
-                Text(
-                  sortBy.label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: _Tokens.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+            sortBy: sortBy,
+            onSortTap: () => ref
+                .read(_productSortByProvider.notifier)
+                .state = sortBy.next,
           ),
 
           // 商品列表
@@ -724,11 +703,15 @@ class _CategoryFilterBar extends StatelessWidget {
     required this.categoriesAsync,
     required this.selectedId,
     required this.onSelect,
+    required this.sortBy,
+    required this.onSortTap,
   });
 
   final AsyncValue<List<AdminCategoryModel>> categoriesAsync;
   final String? selectedId;
   final ValueChanged<String?> onSelect;
+  final _ProductSortBy sortBy;
+  final VoidCallback onSortTap;
 
   @override
   Widget build(BuildContext context) {
@@ -737,20 +720,38 @@ class _CategoryFilterBar extends StatelessWidget {
     return Container(
       height: 52,
       color: _Tokens.cardBg,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
         children: [
-          _FilterChipItem(
-            label: '全部',
-            isSelected: selectedId == null,
-            onTap: () => onSelect(null),
+          // 分類 chips（可水平捲動）
+          Expanded(
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+              children: [
+                _FilterChipItem(
+                  label: '全部',
+                  isSelected: selectedId == null,
+                  onTap: () => onSelect(null),
+                ),
+                ...categories.map(
+                  (c) => _FilterChipItem(
+                    label: c.name,
+                    isSelected: selectedId == c.id,
+                    onTap: () => onSelect(c.id),
+                  ),
+                ),
+              ],
+            ),
           ),
-          ...categories.map(
-            (c) => _FilterChipItem(
-              label: c.name,
-              isSelected: selectedId == c.id,
-              onTap: () => onSelect(c.id),
+          // 排序按鈕靠右
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              onPressed: onSortTap,
+              icon: Icon(sortBy.icon, size: 20),
+              tooltip: sortBy.label,
+              color: _Tokens.brandBrown,
+              visualDensity: VisualDensity.compact,
             ),
           ),
         ],
