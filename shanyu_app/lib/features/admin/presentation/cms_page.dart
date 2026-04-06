@@ -438,52 +438,87 @@ class _AddBannerDialogState extends ConsumerState<_AddBannerDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 圖片選擇區
+              // 圖片選擇區（5:2 比例預覽框）
               GestureDetector(
                 onTap: _isUploading ? null : _pickImage,
-                child: Container(
-                  height: 160,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: theme.colorScheme.outlineVariant,
+                child: AspectRatio(
+                  aspectRatio: 2.5,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
                     ),
-                  ),
-                  child: _pickedBytes != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.memory(
-                            _pickedBytes!,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.cloud_upload_outlined,
-                              size: 40,
-                              color: theme.colorScheme.primary,
+                    child: _pickedBytes != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: InteractiveViewer(
+                              minScale: 1.0,
+                              maxScale: 4.0,
+                              child: Image.memory(
+                                _pickedBytes!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '點擊上傳圖片',
-                              style: theme.textTheme.bodyMedium?.copyWith(
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.cloud_upload_outlined,
+                                size: 40,
                                 color: theme.colorScheme.primary,
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '建議比例 5:2（例如 1440×576 px）',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                              const SizedBox(height: 8),
+                              Text(
+                                '點擊或拖曳上傳圖片',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '建議比例 5:2（例如 1440×576 px）',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
                 ),
               ),
+              if (_pickedBytes != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline,
+                          size: 14,
+                          color: theme.colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(
+                        '可拖曳平移、滾輪或雙指縮放調整構圖',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: _pickImage,
+                        icon: const Icon(Icons.swap_horiz, size: 16),
+                        label: const Text('更換圖片'),
+                        style: TextButton.styleFrom(
+                          textStyle: theme.textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
