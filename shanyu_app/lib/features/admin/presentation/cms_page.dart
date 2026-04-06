@@ -95,6 +95,7 @@ class _BannerManagementTabState extends ConsumerState<_BannerManagementTab> {
                               isLast: index == banners.length - 1,
                               onMoveUp: () => _swapBanners(banners, index, index - 1),
                               onMoveDown: () => _swapBanners(banners, index, index + 1),
+                              onEdit: () => _showEditBannerDialog(context, banners, index),
                               onDelete: () => _deleteBanner(banners, index),
                             );
                           },
@@ -138,11 +139,29 @@ class _BannerManagementTabState extends ConsumerState<_BannerManagementTab> {
   ) async {
     final result = await showDialog<BannerItem>(
       context: context,
-      builder: (_) => const _AddBannerDialog(),
+      builder: (_) => const _BannerFormDialog(),
     );
     if (result != null) {
       setState(() {
         _localBanners = [...currentBanners, result];
+      });
+    }
+  }
+
+  Future<void> _showEditBannerDialog(
+    BuildContext context,
+    List<BannerItem> currentBanners,
+    int index,
+  ) async {
+    final result = await showDialog<BannerItem>(
+      context: context,
+      builder: (_) => _BannerFormDialog(existing: currentBanners[index]),
+    );
+    if (result != null) {
+      setState(() {
+        final list = List<BannerItem>.from(currentBanners);
+        list[index] = result;
+        _localBanners = list;
       });
     }
   }
@@ -196,6 +215,7 @@ class _BannerListTile extends StatelessWidget {
     required this.isLast,
     required this.onMoveUp,
     required this.onMoveDown,
+    required this.onEdit,
     required this.onDelete,
   });
 
@@ -204,6 +224,7 @@ class _BannerListTile extends StatelessWidget {
   final bool isLast;
   final VoidCallback onMoveUp;
   final VoidCallback onMoveDown;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
@@ -286,6 +307,13 @@ class _BannerListTile extends StatelessWidget {
                     tooltip: '下移',
                     iconSize: 20,
                     color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: onEdit,
+                    tooltip: '編輯',
+                    iconSize: 20,
+                    color: theme.colorScheme.primary,
                   ),
                   IconButton(
                     icon: Icon(Icons.delete_outline,
@@ -399,16 +427,19 @@ class _ImageErrorPlaceholder extends StatelessWidget {
   }
 }
 
-// ── _AddBannerDialog ──────────────────────────────────────────────────────────
+// ── _BannerFormDialog（新增 / 編輯共用）────────────────────────────────────────
 
-class _AddBannerDialog extends ConsumerStatefulWidget {
-  const _AddBannerDialog();
+class _BannerFormDialog extends ConsumerStatefulWidget {
+  const _BannerFormDialog({this.existing});
+
+  /// 傳入既有 Banner 即為編輯模式，null 為新增模式。
+  final BannerItem? existing;
 
   @override
-  ConsumerState<_AddBannerDialog> createState() => _AddBannerDialogState();
+  ConsumerState<_BannerFormDialog> createState() => _BannerFormDialogState();
 }
 
-class _AddBannerDialogState extends ConsumerState<_AddBannerDialog> {
+class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _linkController = TextEditingController();
@@ -416,6 +447,17 @@ class _AddBannerDialogState extends ConsumerState<_AddBannerDialog> {
   Uint8List? _pickedBytes;
   String? _pickedFileName;
   bool _isUploading = false;
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEditing) {
+      _titleController.text = widget.existing!.title ?? '';
+      _linkController.text = widget.existing!.linkUrl ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -429,7 +471,7 @@ class _AddBannerDialogState extends ConsumerState<_AddBannerDialog> {
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: const Text('新增 Banner'),
+      title: Text(_isEditing ? '編輯 Banner' : '新增 Banner'),
       content: SizedBox(
         width: 480,
         child: Form(
@@ -439,90 +481,81 @@ class _AddBannerDialogState extends ConsumerState<_AddBannerDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 圖片選擇區（5:2 比例預覽框）
-              AspectRatio(
-                aspectRatio: 2.5,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: theme.colorScheme.outlineVariant,
+              GestureDetector(
+                onTap: _isUploading ? null : _pickImage,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: AspectRatio(
+                    aspectRatio: 2.5,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _pickedBytes != null
+                            ? Image.memory(
+                                _pickedBytes!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                              )
+                            : _isEditing && widget.existing!.imageUrl.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: widget.existing!.imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorWidget: (_, __, ___) =>
+                                        const _ImageErrorPlaceholder(),
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.cloud_upload_outlined,
+                                        size: 40,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        '點擊上傳圖片',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '建議比例 5:2（例如 1440×576 px）',
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                      ),
                     ),
                   ),
-                  child: _pickedBytes != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: InteractiveViewer(
-                            minScale: 1.0,
-                            maxScale: 4.0,
-                            child: Image.memory(
-                              _pickedBytes!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
-                          ),
-                        )
-                      : GestureDetector(
-                          onTap: _isUploading ? null : _pickImage,
-                          child: MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.cloud_upload_outlined,
-                                  size: 40,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '點擊上傳圖片',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '建議比例 5:2（例如 1440×576 px）',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                 ),
               ),
-              if (_pickedBytes != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline,
-                          size: 14,
-                          color: theme.colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Text(
-                        '可拖曳平移、滾輪或雙指縮放調整構圖',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: _pickImage,
-                        icon: const Icon(Icons.swap_horiz, size: 16),
-                        label: const Text('更換圖片'),
-                        style: TextButton.styleFrom(
-                          textStyle: theme.textTheme.bodySmall,
-                        ),
-                      ),
-                    ],
+              if (_pickedBytes != null || (_isEditing && widget.existing!.imageUrl.isNotEmpty))
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _isUploading ? null : _pickImage,
+                    icon: const Icon(Icons.swap_horiz, size: 16),
+                    label: const Text('更換圖片'),
+                    style: TextButton.styleFrom(
+                      textStyle: theme.textTheme.bodySmall,
+                    ),
                   ),
                 ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -559,7 +592,7 @@ class _AddBannerDialogState extends ConsumerState<_AddBannerDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('確認新增'),
+              : Text(_isEditing ? '儲存變更' : '確認新增'),
         ),
       ],
     );
@@ -583,7 +616,9 @@ class _AddBannerDialogState extends ConsumerState<_AddBannerDialog> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_pickedBytes == null) {
+
+    // 新增模式必須選圖；編輯模式可沿用原圖
+    if (_pickedBytes == null && !_isEditing) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('請先選擇一張圖片')),
       );
@@ -595,22 +630,27 @@ class _AddBannerDialogState extends ConsumerState<_AddBannerDialog> {
     try {
       await ref.read(adminGuardProvider.future);
 
-      final repo = CmsAdminRepository();
-      final fileName = '${const Uuid().v4()}_${_pickedFileName!}';
-      final downloadUrl = await repo.uploadImage(_pickedBytes!, fileName);
+      String imageUrl;
+      if (_pickedBytes != null) {
+        final repo = CmsAdminRepository();
+        final fileName = '${const Uuid().v4()}_${_pickedFileName!}';
+        imageUrl = await repo.uploadImage(_pickedBytes!, fileName);
+      } else {
+        imageUrl = widget.existing!.imageUrl;
+      }
 
-      final newBanner = BannerItem(
-        id: const Uuid().v4(),
-        imageUrl: downloadUrl,
+      final banner = BannerItem(
+        id: _isEditing ? widget.existing!.id : const Uuid().v4(),
+        imageUrl: imageUrl,
         title: _titleController.text.trim(),
         linkUrl: _linkController.text.trim().isEmpty
             ? null
             : _linkController.text.trim(),
-        sortOrder: 0,
-        isActive: true,
+        sortOrder: _isEditing ? widget.existing!.sortOrder : 0,
+        isActive: _isEditing ? widget.existing!.isActive : true,
       );
 
-      if (mounted) Navigator.of(context).pop(newBanner);
+      if (mounted) Navigator.of(context).pop(banner);
     } on UnauthorizedException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
