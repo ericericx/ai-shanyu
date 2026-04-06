@@ -179,6 +179,7 @@ class AdminVariantModel {
     required this.unit,
     this.isPreorder = false,
     this.note = '',
+    this.sortOrder = 0,
   });
 
   final String id;
@@ -189,6 +190,7 @@ class AdminVariantModel {
   final String unit;
   final bool isPreorder;
   final String note;
+  final int sortOrder;
 
   factory AdminVariantModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -201,6 +203,7 @@ class AdminVariantModel {
       unit: (data['unit'] as String?) ?? '',
       isPreorder: (data['isPreorder'] as bool?) ?? false,
       note: (data['note'] as String?) ?? '',
+      sortOrder: (data['sortOrder'] as int?) ?? 0,
     );
   }
 }
@@ -393,7 +396,7 @@ class ProductsAdminRepository {
 
   /// 監聽指定農產的所有販售規格。
   Stream<List<AdminVariantModel>> watchVariants(String productId) {
-    return _variantsRef(productId).snapshots().map(
+    return _variantsRef(productId).orderBy('sortOrder').snapshots().map(
           (snap) => snap.docs.map(AdminVariantModel.fromFirestore).toList(),
         );
   }
@@ -434,8 +437,9 @@ class ProductsAdminRepository {
     required String unit,
     bool isPreorder = false,
     String note = '',
+    int? sortOrder,
   }) async {
-    await _variantsRef(productId).doc(variantId).update({
+    final payload = <String, dynamic>{
       'name': name,
       'price': price,
       'comparePrice': comparePrice,
@@ -444,7 +448,9 @@ class ProductsAdminRepository {
       'isPreorder': isPreorder,
       'note': note,
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+    if (sortOrder != null) payload['sortOrder'] = sortOrder;
+    await _variantsRef(productId).doc(variantId).update(payload);
   }
 
   /// 刪除販售規格。

@@ -8,7 +8,6 @@ import '../../features/admin/presentation/admin_shell.dart';
 import '../../features/admin/presentation/cms_page.dart';
 import '../../features/admin/presentation/crm_page.dart';
 import '../../features/admin/presentation/products_admin_page.dart';
-import '../../features/admin/presentation/shelf_management_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/cart/presentation/cart_page.dart';
@@ -38,7 +37,6 @@ abstract final class AppRoutes {
   static const admin = '/admin';
   static const adminCms = '/admin/cms';
   static const adminProducts = '/admin/products';
-  static const adminShelf = '/admin/shelf';
   static const adminOrders = '/admin/orders';
   static const adminCrm = '/admin/crm';
   static const adminChat = '/admin/chat';
@@ -206,17 +204,7 @@ GoRouter appRouter(Ref ref) {
               ),
             ],
           ),
-          // 2：架上管理
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.adminShelf,
-                name: 'adminShelf',
-                builder: (context, state) => const ShelfManagementPage(),
-              ),
-            ],
-          ),
-          // 3：訂單管理
+          // 2：訂單管理
           StatefulShellBranch(
             routes: [
               GoRoute(

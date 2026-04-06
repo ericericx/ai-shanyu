@@ -84,7 +84,7 @@ class ProductsAdminPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('農產管理'),
@@ -99,6 +99,10 @@ class ProductsAdminPage extends ConsumerWidget {
                 text: '農產管理',
               ),
               Tab(
+                icon: Icon(Icons.storefront_outlined),
+                text: '架上管理',
+              ),
+              Tab(
                 icon: Icon(Icons.calendar_month_outlined),
                 text: '時程總覽',
               ),
@@ -109,6 +113,7 @@ class ProductsAdminPage extends ConsumerWidget {
           children: [
             _CategoryTab(),
             _ProductTab(),
+            _ShelfTab(),
             _TimelineTab(),
           ],
         ),
@@ -1610,7 +1615,7 @@ class _VariantsDialogState extends State<_VariantsDialog> {
         name: _nameCtrl.text.trim(),
         price: int.parse(_priceCtrl.text),
         comparePrice: int.tryParse(_comparePriceCtrl.text),
-        stock: int.tryParse(_stockCtrl.text) ?? 0,
+        stock: 0,
         unit: _selectedUnit == '自填'
             ? _unitCtrl.text.trim()
             : (_selectedUnit ?? ''),
@@ -1806,23 +1811,6 @@ class _VariantsDialogState extends State<_VariantsDialog> {
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _stockCtrl,
-                            decoration: const InputDecoration(
-                              labelText: '庫存',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            validator: (v) =>
-                                (v == null || v.isEmpty) ? '必填' : null,
                           ),
                         ),
                       ],
@@ -2058,19 +2046,6 @@ class _VariantsDialogState extends State<_VariantsDialog> {
                   decoration: const InputDecoration(
                     labelText: '原價',
                     prefixText: 'NT\$ ',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: _editStockCtrl,
-                  decoration: const InputDecoration(
-                    labelText: '庫存',
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
@@ -2736,6 +2711,395 @@ class _DialogTextField extends StatelessWidget {
 
 // ════════════════════════════════════════════════════════════════════════════════
 // Tab 3：時程總覽
+// ════════════════════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════════════════
+// Tab 3：架上管理
+// ════════════════════════════════════════════════════════════════════════════════
+
+class _ShelfTab extends ConsumerWidget {
+  const _ShelfTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final productsAsync = ref.watch(_allProductsProvider);
+
+    return productsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('載入失敗：$err')),
+      data: (allProducts) {
+        final products =
+            allProducts.where((p) => p.status == 'active').toList();
+        if (products.isEmpty) {
+          return const Center(
+            child: Text('目前沒有上架中的農產',
+                style: TextStyle(color: _Tokens.textSecondary)),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: products.length,
+          itemBuilder: (context, index) =>
+              _ShelfProductCard(product: products[index]),
+        );
+      },
+    );
+  }
+}
+
+class _ShelfProductCard extends ConsumerWidget {
+  const _ShelfProductCard({required this.product});
+
+  final AdminProductModel product;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repo = ref.watch(_repoProvider);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 農產名稱
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: _Tokens.surface,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Row(
+              children: [
+                if (product.coverImageUrl.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.network(
+                      product.coverImageUrl,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const SizedBox.shrink(),
+                    ),
+                  )
+                else
+                  const Icon(Icons.eco, size: 28, color: _Tokens.brandBrownLight),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _Tokens.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 規格列表
+          StreamBuilder<List<AdminVariantModel>>(
+            stream: repo.watchVariants(product.id),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(
+                      child:
+                          LinearProgressIndicator()),
+                );
+              }
+              final variants = snapshot.data ?? [];
+              if (variants.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('尚無販售規格',
+                      style: TextStyle(color: _Tokens.textSecondary),
+                      textAlign: TextAlign.center),
+                );
+              }
+              return Column(
+                children: List.generate(variants.length, (i) {
+                  final v = variants[i];
+                  return _ShelfVariantRow(
+                    productId: product.id,
+                    variant: v,
+                    repo: repo,
+                    isFirst: i == 0,
+                    isLast: i == variants.length - 1,
+                    onMoveUp: () => _reorder(repo, product.id, variants, i, i - 1),
+                    onMoveDown: () => _reorder(repo, product.id, variants, i, i + 1),
+                  );
+                }),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _reorder(
+    ProductsAdminRepository repo,
+    String productId,
+    List<AdminVariantModel> variants,
+    int from,
+    int to,
+  ) async {
+    // 交換 sortOrder 值
+    final a = variants[from];
+    final b = variants[to];
+    await Future.wait([
+      repo.updateVariant(productId, a.id,
+          name: a.name, price: a.price, comparePrice: a.comparePrice,
+          stock: a.stock, unit: a.unit, isPreorder: a.isPreorder, note: a.note,
+          sortOrder: to),
+      repo.updateVariant(productId, b.id,
+          name: b.name, price: b.price, comparePrice: b.comparePrice,
+          stock: b.stock, unit: b.unit, isPreorder: b.isPreorder, note: b.note,
+          sortOrder: from),
+    ]);
+  }
+}
+
+class _ShelfVariantRow extends StatefulWidget {
+  const _ShelfVariantRow({
+    required this.productId,
+    required this.variant,
+    required this.repo,
+    required this.isFirst,
+    required this.isLast,
+    required this.onMoveUp,
+    required this.onMoveDown,
+  });
+
+  final String productId;
+  final AdminVariantModel variant;
+  final ProductsAdminRepository repo;
+  final bool isFirst;
+  final bool isLast;
+  final VoidCallback onMoveUp;
+  final VoidCallback onMoveDown;
+
+  @override
+  State<_ShelfVariantRow> createState() => _ShelfVariantRowState();
+}
+
+class _ShelfVariantRowState extends State<_ShelfVariantRow> {
+  late final TextEditingController _stockCtrl;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _stockCtrl =
+        TextEditingController(text: widget.variant.stock.toString());
+  }
+
+  @override
+  void didUpdateWidget(covariant _ShelfVariantRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.variant.stock != widget.variant.stock && !_isSaving) {
+      _stockCtrl.text = widget.variant.stock.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _stockCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _updateStock(int newStock) async {
+    if (newStock < 0) return;
+    setState(() => _isSaving = true);
+    try {
+      final v = widget.variant;
+      await widget.repo.updateVariant(
+        widget.productId, v.id,
+        name: v.name, price: v.price, comparePrice: v.comparePrice,
+        stock: newStock, unit: v.unit, isPreorder: v.isPreorder, note: v.note,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新失敗：$e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('確認刪除'),
+        content: Text('確定要刪除規格「${widget.variant.name}」嗎？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('刪除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await widget.repo.deleteVariant(widget.productId, widget.variant.id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final v = widget.variant;
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: _Tokens.divider)),
+      ),
+      child: Row(
+        children: [
+          // 排序
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: widget.isFirst ? null : widget.onMoveUp,
+                icon: const Icon(Icons.keyboard_arrow_up, size: 18),
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+              IconButton(
+                onPressed: widget.isLast ? null : widget.onMoveDown,
+                icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+
+          // 規格資訊
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${v.name}（${v.unit}）',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: _Tokens.textPrimary,
+                  ),
+                ),
+                Text(
+                  'NT\$ ${v.price}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: _Tokens.brandBrown,
+                  ),
+                ),
+                if (v.note.isNotEmpty)
+                  Text(v.note,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: _Tokens.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      )),
+              ],
+            ),
+          ),
+
+          // 庫存調整
+          IconButton(
+            onPressed: _isSaving || v.stock <= 0
+                ? null
+                : () => _updateStock(v.stock - 1),
+            icon: const Icon(Icons.remove_circle_outline, size: 20),
+            color: theme.colorScheme.error,
+            visualDensity: VisualDensity.compact,
+          ),
+          SizedBox(
+            width: 52,
+            child: TextField(
+              controller: _stockCtrl,
+              textAlign: TextAlign.center,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                isDense: true,
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onSubmitted: (val) {
+                final n = int.tryParse(val);
+                if (n != null && n >= 0) _updateStock(n);
+              },
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ),
+          IconButton(
+            onPressed: _isSaving ? null : () => _updateStock(v.stock + 1),
+            icon: const Icon(Icons.add_circle_outline, size: 20),
+            color: _Tokens.statusActive,
+            visualDensity: VisualDensity.compact,
+          ),
+
+          // 狀態
+          Container(
+            width: 48,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+            decoration: BoxDecoration(
+              color: v.stock > 0
+                  ? _Tokens.statusActiveBg
+                  : (v.isPreorder ? _Tokens.statusDraftBg : _Tokens.statusArchivedBg),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              v.stock > 0 ? '有庫存' : (v.isPreorder ? '預購' : '售完'),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: v.stock > 0
+                    ? _Tokens.statusActive
+                    : (v.isPreorder ? _Tokens.statusDraft : _Tokens.statusArchived),
+              ),
+            ),
+          ),
+
+          // 刪除
+          IconButton(
+            onPressed: _delete,
+            icon: Icon(Icons.delete_outline,
+                size: 18, color: theme.colorScheme.error),
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// Tab 4：時程總覽
 // ════════════════════════════════════════════════════════════════════════════════
 
 class _TimelineTab extends StatelessWidget {
