@@ -40,6 +40,12 @@ const _kNavItems = [
     path: '/admin/products',
   ),
   _NavItem(
+    label: '架上管理',
+    icon: Icons.storefront_outlined,
+    selectedIcon: Icons.storefront,
+    path: '/admin/shelf',
+  ),
+  _NavItem(
     label: '訂單管理',
     icon: Icons.receipt_long_outlined,
     selectedIcon: Icons.receipt_long,
