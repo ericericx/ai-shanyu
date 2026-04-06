@@ -47,18 +47,173 @@ class ProductListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDesktop = MediaQuery.sizeOf(context).width >=
+        _ProductListTokens.mobileBreakpoint;
+
     return Scaffold(
       backgroundColor: _ProductListTokens.surface,
       appBar: const AppNavBar(),
-      body: _ProductListBody(categoryId: categoryId),
+      body: isDesktop
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 左側分類側欄
+                _CategorySidebar(currentCategoryId: categoryId),
+                const VerticalDivider(width: 1),
+                // 右側農產內容
+                Expanded(
+                  child: _ProductListContent(categoryId: categoryId),
+                ),
+              ],
+            )
+          : Column(
+              children: [
+                // 手機版：頂部水平分類列
+                _CategoryHorizontalBar(currentCategoryId: categoryId),
+                Expanded(
+                  child: _ProductListContent(categoryId: categoryId),
+                ),
+              ],
+            ),
     );
   }
 }
 
-// ── 頁面主體 ──────────────────────────────────────────────────────────────────
+// ── 分類側欄（桌面版） ───────────────────────────────────────────────────────
 
-class _ProductListBody extends ConsumerWidget {
-  const _ProductListBody({required this.categoryId});
+class _CategorySidebar extends ConsumerWidget {
+  const _CategorySidebar({required this.currentCategoryId});
+
+  final String currentCategoryId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoriesAsync = ref.watch(categoriesProvider);
+
+    return SizedBox(
+      width: 200,
+      child: categoriesAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => const SizedBox.shrink(),
+        data: (categories) => ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final cat = categories[index];
+            final isSelected = cat.id == currentCategoryId;
+            return _SidebarItem(
+              name: cat.name,
+              isSelected: isSelected,
+              onTap: () => context.go('/products/${cat.id}'),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarItem extends StatelessWidget {
+  const _SidebarItem({
+    required this.name,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String name;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? _ProductListTokens.brandBrown.withValues(alpha: 0.1)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ListTile(
+        dense: true,
+        title: Text(
+          name,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+            color: isSelected
+                ? _ProductListTokens.brandBrown
+                : _ProductListTokens.textSecondary,
+          ),
+        ),
+        onTap: onTap,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+}
+
+// ── 分類水平列（手機版） ─────────────────────────────────────────────────────
+
+class _CategoryHorizontalBar extends ConsumerWidget {
+  const _CategoryHorizontalBar({required this.currentCategoryId});
+
+  final String currentCategoryId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoriesAsync = ref.watch(categoriesProvider);
+
+    return Container(
+      height: 48,
+      color: Colors.white,
+      child: categoriesAsync.when(
+        loading: () => const SizedBox.shrink(),
+        error: (_, __) => const SizedBox.shrink(),
+        data: (categories) => ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final cat = categories[index];
+            final isSelected = cat.id == currentCategoryId;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                label: Text(cat.name),
+                selected: isSelected,
+                onSelected: (_) => context.go('/products/${cat.id}'),
+                selectedColor:
+                    _ProductListTokens.brandBrown.withValues(alpha: 0.12),
+                checkmarkColor: _ProductListTokens.brandBrown,
+                labelStyle: TextStyle(
+                  fontSize: 13,
+                  fontWeight:
+                      isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: isSelected
+                      ? _ProductListTokens.brandBrown
+                      : _ProductListTokens.textSecondary,
+                ),
+                side: BorderSide(
+                  color: isSelected
+                      ? _ProductListTokens.brandBrown
+                      : const Color(0xFFE0E0E0),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// ── 農產內容區 ───────────────────────────────────────────────────────────────
+
+class _ProductListContent extends ConsumerWidget {
+  const _ProductListContent({required this.categoryId});
 
   final String categoryId;
 
@@ -77,7 +232,7 @@ class _ProductListBody extends ConsumerWidget {
           ),
         ),
 
-        // 商品 Grid
+        // 農產 Grid
         productsAsync.when(
           loading: () => _ProductGridSkeleton(categoryId: categoryId),
           error: (error, _) => SliverToBoxAdapter(
