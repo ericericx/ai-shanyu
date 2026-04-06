@@ -199,52 +199,65 @@ class _BannerListTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            width: _kThumbnailSize,
-            height: _kThumbnailSize,
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 寬幅圖片預覽（與 Banner 實際比例一致）
+          AspectRatio(
+            aspectRatio: 2.5,
             child: banner.imageUrl.isNotEmpty
                 ? CachedNetworkImage(
                     imageUrl: banner.imageUrl,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => const _ImageErrorPlaceholder(),
+                    errorWidget: (_, __, ___) =>
+                        const _ImageErrorPlaceholder(),
                   )
                 : const _ImageErrorPlaceholder(),
           ),
-        ),
-        title: Text(
-          banner.title ?? '（無標題）',
-          style: theme.textTheme.bodyLarge,
-        ),
-        subtitle: banner.linkUrl != null
-            ? Text(
-                banner.linkUrl!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.primary,
+          // 資訊列
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        banner.title ?? '（無標題）',
+                        style: theme.textTheme.bodyLarge,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (banner.linkUrl != null)
+                        Text(
+                          banner.linkUrl!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              )
-            : null,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.drag_handle,
-              color: theme.colorScheme.outlineVariant,
+                Icon(
+                  Icons.drag_handle,
+                  color: theme.colorScheme.outlineVariant,
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: Icon(Icons.delete_outline,
+                      color: theme.colorScheme.error),
+                  onPressed: onDelete,
+                  tooltip: '刪除',
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: Icon(Icons.delete_outline,
-                  color: theme.colorScheme.error),
-              onPressed: onDelete,
-              tooltip: '刪除',
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
