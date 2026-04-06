@@ -247,7 +247,7 @@ class _ProductGrid extends StatelessWidget {
               crossAxisCount: columns,
               mainAxisSpacing: _ProductListTokens.cardSpacing,
               crossAxisSpacing: _ProductListTokens.cardSpacing,
-              childAspectRatio: 0.72,
+              childAspectRatio: 0.6,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
@@ -381,52 +381,59 @@ class _ProductCardInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 預購標籤
-          if (product.isPreorder) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: _ProductListTokens.preorderBadgeBg,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Text(
-                '預購',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
+          // 標籤列
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: [
+              if (product.isPreorder)
+                _Badge(
+                  label: '預購',
                   color: _ProductListTokens.preorderBadgeText,
+                  bgColor: _ProductListTokens.preorderBadgeBg,
                 ),
-              ),
-            ),
-            const SizedBox(height: 4),
-          ],
+              if (product.minPrice != null)
+                _Badge(
+                  label: 'NT\$ ${product.minPrice} 起',
+                  color: _ProductListTokens.brandBrown,
+                  bgColor: const Color(0xFFF5F0EC),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
 
-          // 商品名稱
+          // 農產名稱
           Text(
             product.name,
             style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
               color: _ProductListTokens.textPrimary,
               height: 1.4,
             ),
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
 
+          // 農產描述
+          if (product.description.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              product.description,
+              style: const TextStyle(
+                fontSize: 12,
+                color: _ProductListTokens.textSecondary,
+                height: 1.4,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+
           const Spacer(),
 
-          // 最低價格
-          if (product.minPrice != null)
-            Text(
-              'NT\$ ${product.minPrice}',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: _ProductListTokens.brandBrown,
-              ),
-            )
-          else
+          // 最低價格（無 minPrice 時）
+          if (product.minPrice == null)
             Text(
               '洽詢價格',
               style: TextStyle(
@@ -435,6 +442,37 @@ class _ProductCardInfo extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  const _Badge({
+    required this.label,
+    required this.color,
+    required this.bgColor,
+  });
+
+  final String label;
+  final Color color;
+  final Color bgColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }
@@ -467,7 +505,7 @@ class _ProductGridSkeleton extends StatelessWidget {
               crossAxisCount: columns,
               mainAxisSpacing: _ProductListTokens.cardSpacing,
               crossAxisSpacing: _ProductListTokens.cardSpacing,
-              childAspectRatio: 0.72,
+              childAspectRatio: 0.6,
             ),
             itemCount: 6,
             itemBuilder: (context, index) => const _SkeletonCard(),
