@@ -233,7 +233,7 @@ class _BannerManagementTabState extends ConsumerState<_BannerManagementTab> {
 
 // ── _BannerListTile ───────────────────────────────────────────────────────────
 
-class _BannerListTile extends StatelessWidget {
+class _BannerListTile extends ConsumerWidget {
   const _BannerListTile({
     super.key,
     required this.banner,
@@ -254,7 +254,7 @@ class _BannerListTile extends StatelessWidget {
   final VoidCallback onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return Card(
@@ -291,15 +291,10 @@ class _BannerListTile extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (banner.linkUrl != null)
-                          Text(
-                            banner.linkUrl!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.primary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                        _BannerLinkLabel(
+                          linkUrl: banner.linkUrl,
+                          ref: ref,
+                        ),
                       ],
                     ),
                   ),
@@ -354,6 +349,74 @@ class _BannerListTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── _BannerLinkLabel（解析 linkUrl 顯示可讀標籤）────────────────────────────
+
+class _BannerLinkLabel extends StatelessWidget {
+  const _BannerLinkLabel({required this.linkUrl, required this.ref});
+
+  final String? linkUrl;
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final style = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.primary,
+    );
+
+    if (linkUrl == null || linkUrl!.isEmpty) {
+      return Text('無連結', style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ));
+    }
+
+    // /products/:catId/:prodId
+    final productMatch =
+        RegExp(r'^/products/([^/]+)/([^/]+)$').firstMatch(linkUrl!);
+    if (productMatch != null) {
+      final catId = productMatch.group(1)!;
+      final prodId = productMatch.group(2)!;
+      final productsAsync = ref.watch(productsByCategoryProvider(catId));
+      final productName = productsAsync.valueOrNull
+          ?.where((p) => p.id == prodId)
+          .firstOrNull
+          ?.name;
+      return Text(
+        '導連商品：${productName ?? '載入中...'}',
+        style: style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    // /products/:catId
+    final categoryMatch =
+        RegExp(r'^/products/([^/]+)$').firstMatch(linkUrl!);
+    if (categoryMatch != null) {
+      final catId = categoryMatch.group(1)!;
+      final categoriesAsync = ref.watch(categoriesProvider);
+      final catName = categoriesAsync.valueOrNull
+          ?.where((c) => c.id == catId)
+          .firstOrNull
+          ?.name;
+      return Text(
+        '導連分類：${catName ?? '載入中...'}',
+        style: style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    // 外部 URL
+    return Text(
+      '網址：$linkUrl',
+      style: style,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
