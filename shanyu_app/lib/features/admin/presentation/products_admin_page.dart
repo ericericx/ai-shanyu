@@ -890,8 +890,8 @@ class _ProductCard extends StatelessWidget {
                 Text(
                   product.name,
                   style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
                     color: _Tokens.textPrimary,
                   ),
                   maxLines: 1,
