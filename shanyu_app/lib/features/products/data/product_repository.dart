@@ -27,10 +27,11 @@ class ProductRepository {
         );
   }
 
-  /// 監聽所有分類，依 sortOrder 排序。
+  /// 監聽所有顯示中的分類，依 sortOrder 排序。
   Stream<List<CategoryModel>> watchCategories() {
     return _firestore
         .collection('categories')
+        .where('isActive', isEqualTo: true)
         .orderBy('sortOrder')
         .snapshots()
         .map(
