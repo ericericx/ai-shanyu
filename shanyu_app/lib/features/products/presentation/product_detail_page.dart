@@ -278,12 +278,14 @@ class _DetailScrollBody extends StatelessWidget {
                         aspectRatio: 1,
                         child: _mainImageChild(displayImageUrl, detail.name),
                       ),
-                      if (allImages.length > 1)
+                      if (allImages.length > 1) ...[
+                        const SizedBox(height: 12),
                         _ThumbnailStrip(
                           imageUrls: allImages,
                           activeImageUrl: displayImageUrl,
                           onTap: onThumbnailTap,
                         ),
+                      ],
                     ],
                   ),
                 ),
@@ -309,12 +311,14 @@ class _DetailScrollBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _MainImage(imageUrl: displayImageUrl, productName: detail.name),
-                  if (allImages.length > 1)
+                  if (allImages.length > 1) ...[
+                    const SizedBox(height: 12),
                     _ThumbnailStrip(
                       imageUrls: allImages,
                       activeImageUrl: displayImageUrl,
                       onTap: onThumbnailTap,
                     ),
+                  ],
                   const SizedBox(height: _DetailTokens.sectionGap),
                   contentColumn,
                 ],
