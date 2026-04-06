@@ -169,6 +169,10 @@ class _CategoryTab extends ConsumerWidget {
               final category = categories[index];
               return _CategoryListTile(
                 category: category,
+                isFirst: index == 0,
+                isLast: index == categories.length - 1,
+                onMoveUp: () => _swapCategories(ref, categories, index, index - 1),
+                onMoveDown: () => _swapCategories(ref, categories, index, index + 1),
                 onEdit: () =>
                     _showCategoryDialog(context, ref, existing: category),
                 onDelete: () =>
@@ -222,6 +226,19 @@ class _CategoryTab extends ConsumerWidget {
     );
   }
 
+  void _swapCategories(
+    WidgetRef ref,
+    List<AdminCategoryModel> categories,
+    int from,
+    int to,
+  ) {
+    final repo = ref.read(_repoProvider);
+    final a = categories[from];
+    final b = categories[to];
+    repo.updateCategory(a.id, {'sortOrder': to});
+    repo.updateCategory(b.id, {'sortOrder': from});
+  }
+
   void _confirmDeleteCategory(
     BuildContext context,
     WidgetRef ref,
@@ -260,12 +277,20 @@ class _CategoryTab extends ConsumerWidget {
 class _CategoryListTile extends StatelessWidget {
   const _CategoryListTile({
     required this.category,
+    required this.isFirst,
+    required this.isLast,
+    required this.onMoveUp,
+    required this.onMoveDown,
     required this.onEdit,
     required this.onDelete,
     required this.onToggleActive,
   });
 
   final AdminCategoryModel category;
+  final bool isFirst;
+  final bool isLast;
+  final VoidCallback onMoveUp;
+  final VoidCallback onMoveDown;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final ValueChanged<bool> onToggleActive;
@@ -278,55 +303,57 @@ class _CategoryListTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(_Tokens.cardBorderRadius),
         border: Border.all(color: _Tokens.divider),
       ),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        title: Row(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
           children: [
+            // 排序箭頭
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: isFirst ? null : onMoveUp,
+                  icon: const Icon(Icons.keyboard_arrow_up, size: 20),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                ),
+                IconButton(
+                  onPressed: isLast ? null : onMoveDown,
+                  icon: const Icon(Icons.keyboard_arrow_down, size: 20),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                ),
+              ],
+            ),
+            const SizedBox(width: 8),
+            // 名稱 + slug
             Expanded(
-              child: Text(
-                category.name,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: _Tokens.textPrimary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category.name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: _Tokens.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'slug: ${category.slug}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: _Tokens.textSecondary,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
               ),
             ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: _Tokens.brandBrown.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '排序 ${category.sortOrder}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: _Tokens.brandBrown,
-                ),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              'slug: ${category.slug}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: _Tokens.textSecondary,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+            // 操作
             Switch(
               value: category.isActive,
               activeColor: _Tokens.brandBrown,
@@ -371,7 +398,6 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _slugCtrl;
   late final TextEditingController _descCtrl;
-  late final TextEditingController _sortCtrl;
   bool _isSaving = false;
 
   @override
@@ -381,8 +407,6 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     _nameCtrl = TextEditingController(text: e?.name ?? '');
     _slugCtrl = TextEditingController(text: e?.slug ?? '');
     _descCtrl = TextEditingController(text: e?.description ?? '');
-    _sortCtrl =
-        TextEditingController(text: e?.sortOrder.toString() ?? '0');
   }
 
   @override
@@ -390,7 +414,6 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     _nameCtrl.dispose();
     _slugCtrl.dispose();
     _descCtrl.dispose();
-    _sortCtrl.dispose();
     super.dispose();
   }
 
@@ -402,7 +425,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
         'name': _nameCtrl.text.trim(),
         'slug': _slugCtrl.text.trim(),
         'description': _descCtrl.text.trim(),
-        'sortOrder': int.tryParse(_sortCtrl.text) ?? 0,
+        'sortOrder': widget.existing?.sortOrder ?? 999,
       });
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
@@ -457,14 +480,6 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                 label: '描述',
                 hint: '分類簡介（選填）',
                 maxLines: 3,
-              ),
-              const SizedBox(height: 12),
-              _DialogTextField(
-                controller: _sortCtrl,
-                label: '排序',
-                hint: '數字越小越前面',
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
             ],
           ),
@@ -2976,6 +2991,7 @@ class _ShelfProductCardState extends State<_ShelfProductCard> {
                       onMoveDown: () => _swapLocal(i, i + 1),
                       onIncrement: () => _adjustStock(v.id, 1),
                       onDecrement: () => _adjustStock(v.id, -1),
+                      onStockChanged: (val) => setState(() => _localStocks[v.id] = val),
                       onDelete: () => _deleteVariant(v),
                     );
                   }),
@@ -3040,6 +3056,7 @@ class _ShelfVariantRow extends StatelessWidget {
     required this.onMoveDown,
     required this.onIncrement,
     required this.onDecrement,
+    required this.onStockChanged,
     required this.onDelete,
   });
 
@@ -3052,6 +3069,7 @@ class _ShelfVariantRow extends StatelessWidget {
   final VoidCallback onMoveDown;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
+  final ValueChanged<int> onStockChanged;
   final VoidCallback onDelete;
 
   @override
@@ -3129,12 +3147,23 @@ class _ShelfVariantRow extends StatelessWidget {
               visualDensity: VisualDensity.compact,
             ),
             SizedBox(
-              width: 36,
-              child: Text(
-                '$displayStock',
+              width: 56,
+              child: TextField(
+                controller: TextEditingController(text: '$displayStock'),
                 textAlign: TextAlign.center,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                ),
+                onSubmitted: (val) {
+                  final n = int.tryParse(val);
+                  if (n != null && n >= 0) onStockChanged(n);
+                },
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: _Tokens.textPrimary,
                 ),
