@@ -582,15 +582,26 @@ class _ProductTab extends ConsumerWidget {
                   );
                 }
 
-                return SingleChildScrollView(
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final available = constraints.maxWidth - 32; // padding
+                    const spacing = 12.0;
+                    const maxCols = 4;
+                    final cols = ((available + spacing) / (180 + spacing))
+                        .floor()
+                        .clamp(1, maxCols);
+                    final cardWidth =
+                        (available - spacing * (cols - 1)) / cols;
+
+                    return SingleChildScrollView(
                   padding:
                       const EdgeInsets.fromLTRB(16, 16, 16, 96),
                   child: Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
+                    spacing: spacing,
+                    runSpacing: spacing,
                     children: products.map((product) {
                       return SizedBox(
-                        width: 200,
+                        width: cardWidth,
                         child: _ProductCard(
                           product: product,
                           categoryName:
@@ -614,6 +625,8 @@ class _ProductTab extends ConsumerWidget {
                       );
                     }).toList(),
                   ),
+                );
+                  },
                 );
               },
             ),
