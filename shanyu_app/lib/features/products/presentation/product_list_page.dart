@@ -355,8 +355,9 @@ class _CategoryHero extends StatelessWidget {
               _ProductListTokens.pagePadding, 12,
               _ProductListTokens.pagePadding, 16,
             ),
-            child: Text(
-              category!.description,
+            child: _ExpandableText(
+              text: category!.description,
+              maxLines: 3,
               style: const TextStyle(
                 fontSize: 15,
                 color: _ProductListTokens.textSecondary,
@@ -798,6 +799,70 @@ class _ProductListError extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── 可展開文字 ───────────────────────────────────────────────────────────────
+
+class _ExpandableText extends StatefulWidget {
+  const _ExpandableText({
+    required this.text,
+    required this.style,
+    this.maxLines = 3,
+  });
+
+  final String text;
+  final TextStyle style;
+  final int maxLines;
+
+  @override
+  State<_ExpandableText> createState() => _ExpandableTextState();
+}
+
+class _ExpandableTextState extends State<_ExpandableText> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textSpan = TextSpan(text: widget.text, style: widget.style);
+        final tp = TextPainter(
+          text: textSpan,
+          maxLines: widget.maxLines,
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: constraints.maxWidth);
+
+        final isOverflow = tp.didExceedMaxLines;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.text,
+              style: widget.style,
+              maxLines: _expanded ? null : widget.maxLines,
+              overflow: _expanded ? null : TextOverflow.ellipsis,
+            ),
+            if (isOverflow)
+              GestureDetector(
+                onTap: () => setState(() => _expanded = !_expanded),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _expanded ? '收合' : '...more',
+                    style: TextStyle(
+                      fontSize: widget.style.fontSize ?? 14,
+                      color: _ProductListTokens.brandBrown,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

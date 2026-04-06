@@ -250,8 +250,9 @@ class _DetailScrollBody extends StatelessWidget {
                     // 3b. 農產描述
                     if (detail.description.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      Text(
-                        detail.description,
+                      _ExpandableText(
+                        text: detail.description,
+                        maxLines: 3,
                         style: const TextStyle(
                           fontSize: 15,
                           color: _DetailTokens.textSecondary,
@@ -534,7 +535,9 @@ class _VariantSelector extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      variant.name,
+                      variant.unit.isNotEmpty
+                          ? '${variant.name}（${variant.unit}）'
+                          : variant.name,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -705,16 +708,10 @@ class _StoryExpansion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      // 移除 ExpansionTile 預設的 divider 顏色干擾
-      data: Theme.of(context).copyWith(
-        dividerColor: Colors.transparent,
-      ),
-      child: ExpansionTile(
-        tilePadding: EdgeInsets.zero,
-        expandedCrossAxisAlignment: CrossAxisAlignment.start,
-        childrenPadding: const EdgeInsets.only(bottom: 12),
-        title: const Text(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
           '農產故事',
           style: TextStyle(
             fontSize: 16,
@@ -723,20 +720,17 @@ class _StoryExpansion extends StatelessWidget {
             letterSpacing: 0.3,
           ),
         ),
-        iconColor: _DetailTokens.brandBrown,
-        collapsedIconColor: _DetailTokens.brandBrownLight,
-        initiallyExpanded: true,
-        children: [
-          Text(
-            story,
-            style: const TextStyle(
-              fontSize: 15,
-              color: _DetailTokens.textSecondary,
-              height: 1.8,
-            ),
+        const SizedBox(height: 8),
+        _ExpandableText(
+          text: story,
+          maxLines: 3,
+          style: const TextStyle(
+            fontSize: 15,
+            color: _DetailTokens.textSecondary,
+            height: 1.8,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -909,6 +903,70 @@ class _DetailError extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── 可展開文字（收合至 maxLines，顯示 ...more） ─────────────────────────────
+
+class _ExpandableText extends StatefulWidget {
+  const _ExpandableText({
+    required this.text,
+    required this.style,
+    this.maxLines = 3,
+  });
+
+  final String text;
+  final TextStyle style;
+  final int maxLines;
+
+  @override
+  State<_ExpandableText> createState() => _ExpandableTextState();
+}
+
+class _ExpandableTextState extends State<_ExpandableText> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textSpan = TextSpan(text: widget.text, style: widget.style);
+        final tp = TextPainter(
+          text: textSpan,
+          maxLines: widget.maxLines,
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: constraints.maxWidth);
+
+        final isOverflow = tp.didExceedMaxLines;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.text,
+              style: widget.style,
+              maxLines: _expanded ? null : widget.maxLines,
+              overflow: _expanded ? null : TextOverflow.ellipsis,
+            ),
+            if (isOverflow)
+              GestureDetector(
+                onTap: () => setState(() => _expanded = !_expanded),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _expanded ? '收合' : '...more',
+                    style: TextStyle(
+                      fontSize: widget.style.fontSize ?? 14,
+                      color: _DetailTokens.brandBrown,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
