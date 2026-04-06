@@ -108,9 +108,9 @@ class _BannerManagementTabState extends ConsumerState<_BannerManagementTab> {
                 _BannerActionBar(
                   isSaving: _isSaving,
                   onAdd: () => _showAddBannerDialog(context, banners),
-                  onSave: banners.isEmpty
-                      ? null
-                      : () => _saveBanners(context, banners),
+                  onSave: _localBanners != null
+                      ? () => _saveBanners(context, banners)
+                      : null,
                 ),
               ],
             ),
