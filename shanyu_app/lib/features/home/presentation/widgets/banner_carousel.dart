@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart' show launchUrl, LaunchMode;
 
 import '../../../../shared/theme/app_design_tokens.dart';
@@ -128,20 +129,27 @@ class _BannerSlide extends StatelessWidget {
 
   final BannerItem banner;
 
-  Future<void> _handleTap() async {
+  void _handleTap(BuildContext context) {
     final url = banner.linkUrl;
     if (url == null || url.isEmpty) return;
 
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
+    // 內部路由（以 / 開頭）使用 GoRouter 導航
+    if (url.startsWith('/')) {
+      context.go(url);
+      return;
+    }
 
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    // 外部連結使用瀏覽器開啟
+    final uri = Uri.tryParse(url);
+    if (uri != null) {
+      launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: banner.linkUrl != null ? _handleTap : null,
+      onTap: banner.linkUrl != null ? () => _handleTap(context) : null,
       child: Stack(
         fit: StackFit.expand,
         children: [
