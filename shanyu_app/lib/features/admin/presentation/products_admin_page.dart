@@ -2910,40 +2910,45 @@ class _ShelfVariantRow extends StatefulWidget {
 }
 
 class _ShelfVariantRowState extends State<_ShelfVariantRow> {
-  late final TextEditingController _stockCtrl;
+  bool _isEditing = false;
+  late int _localStock;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _stockCtrl =
-        TextEditingController(text: widget.variant.stock.toString());
+    _localStock = widget.variant.stock;
   }
 
   @override
   void didUpdateWidget(covariant _ShelfVariantRow oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.variant.stock != widget.variant.stock && !_isSaving) {
-      _stockCtrl.text = widget.variant.stock.toString();
+    if (!_isEditing) {
+      _localStock = widget.variant.stock;
     }
   }
 
-  @override
-  void dispose() {
-    _stockCtrl.dispose();
-    super.dispose();
-  }
+  void _enterEdit() => setState(() {
+        _isEditing = true;
+        _localStock = widget.variant.stock;
+      });
 
-  Future<void> _updateStock(int newStock) async {
-    if (newStock < 0) return;
+  void _cancelEdit() => setState(() {
+        _isEditing = false;
+        _localStock = widget.variant.stock;
+      });
+
+  Future<void> _save() async {
     setState(() => _isSaving = true);
     try {
       final v = widget.variant;
       await widget.repo.updateVariant(
         widget.productId, v.id,
         name: v.name, price: v.price, comparePrice: v.comparePrice,
-        stock: newStock, unit: v.unit, isPreorder: v.isPreorder, note: v.note,
+        stock: _localStock, unit: v.unit, isPreorder: v.isPreorder,
+        note: v.note,
       );
+      if (mounted) setState(() => _isEditing = false);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2984,136 +2989,190 @@ class _ShelfVariantRowState extends State<_ShelfVariantRow> {
   @override
   Widget build(BuildContext context) {
     final v = widget.variant;
-    final theme = Theme.of(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: _Tokens.divider)),
+      decoration: BoxDecoration(
+        color: _isEditing ? _Tokens.statusDraftBg : null,
+        border: const Border(bottom: BorderSide(color: _Tokens.divider)),
       ),
-      child: Row(
-        children: [
-          // 排序
-          Column(
-            mainAxisSize: MainAxisSize.min,
+      child: _isEditing ? _buildEditMode(v) : _buildReadMode(v),
+    );
+  }
+
+  /// 唯讀模式：規格資訊 + 庫存 badge + 編輯按鈕
+  Widget _buildReadMode(AdminVariantModel v) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                onPressed: widget.isFirst ? null : widget.onMoveUp,
-                icon: const Icon(Icons.keyboard_arrow_up, size: 18),
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              Text(
+                '${v.name}（${v.unit}）',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: _Tokens.textPrimary,
+                ),
               ),
-              IconButton(
-                onPressed: widget.isLast ? null : widget.onMoveDown,
-                icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              Row(
+                children: [
+                  Text(
+                    'NT\$ ${v.price}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: _Tokens.brandBrown,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // 庫存 badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: v.stock > 0
+                          ? _Tokens.statusActiveBg
+                          : (v.isPreorder
+                              ? _Tokens.statusDraftBg
+                              : _Tokens.statusArchivedBg),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      v.stock > 0
+                          ? '庫存 ${v.stock}'
+                          : (v.isPreorder ? '預購中' : '售完'),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: v.stock > 0
+                            ? _Tokens.statusActive
+                            : (v.isPreorder
+                                ? _Tokens.statusDraft
+                                : _Tokens.statusArchived),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              if (v.note.isNotEmpty)
+                Text(v.note,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: _Tokens.textSecondary,
+                      fontStyle: FontStyle.italic,
+                    )),
             ],
           ),
-          const SizedBox(width: 8),
+        ),
+        IconButton(
+          onPressed: _enterEdit,
+          icon: const Icon(Icons.edit_outlined, size: 18),
+          color: _Tokens.brandBrown,
+          tooltip: '編輯',
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
+    );
+  }
 
-          // 規格資訊
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  /// 編輯模式：排序 + 庫存 +/- + 儲存/取消/刪除
+  Widget _buildEditMode(AdminVariantModel v) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            // 排序
+            Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '${v.name}（${v.unit}）',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: _Tokens.textPrimary,
-                  ),
+                IconButton(
+                  onPressed: widget.isFirst ? null : widget.onMoveUp,
+                  icon: const Icon(Icons.keyboard_arrow_up, size: 18),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
                 ),
-                Text(
-                  'NT\$ ${v.price}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: _Tokens.brandBrown,
-                  ),
+                IconButton(
+                  onPressed: widget.isLast ? null : widget.onMoveDown,
+                  icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
                 ),
-                if (v.note.isNotEmpty)
-                  Text(v.note,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: _Tokens.textSecondary,
-                        fontStyle: FontStyle.italic,
-                      )),
               ],
             ),
-          ),
+            const SizedBox(width: 8),
 
-          // 庫存調整
-          IconButton(
-            onPressed: _isSaving || v.stock <= 0
-                ? null
-                : () => _updateStock(v.stock - 1),
-            icon: const Icon(Icons.remove_circle_outline, size: 20),
-            color: theme.colorScheme.error,
-            visualDensity: VisualDensity.compact,
-          ),
-          SizedBox(
-            width: 52,
-            child: TextField(
-              controller: _stockCtrl,
-              textAlign: TextAlign.center,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                isDense: true,
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onSubmitted: (val) {
-                final n = int.tryParse(val);
-                if (n != null && n >= 0) _updateStock(n);
-              },
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-          ),
-          IconButton(
-            onPressed: _isSaving ? null : () => _updateStock(v.stock + 1),
-            icon: const Icon(Icons.add_circle_outline, size: 20),
-            color: _Tokens.statusActive,
-            visualDensity: VisualDensity.compact,
-          ),
-
-          // 狀態
-          Container(
-            width: 48,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-            decoration: BoxDecoration(
-              color: v.stock > 0
-                  ? _Tokens.statusActiveBg
-                  : (v.isPreorder ? _Tokens.statusDraftBg : _Tokens.statusArchivedBg),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              v.stock > 0 ? '有庫存' : (v.isPreorder ? '預購' : '售完'),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: v.stock > 0
-                    ? _Tokens.statusActive
-                    : (v.isPreorder ? _Tokens.statusDraft : _Tokens.statusArchived),
+            // 規格資訊
+            Expanded(
+              child: Text(
+                '${v.name}（${v.unit}）  NT\$ ${v.price}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: _Tokens.textPrimary,
+                ),
               ),
             ),
-          ),
 
-          // 刪除
-          IconButton(
-            onPressed: _delete,
-            icon: Icon(Icons.delete_outline,
-                size: 18, color: theme.colorScheme.error),
-            visualDensity: VisualDensity.compact,
-          ),
-        ],
-      ),
+            // 庫存 +/-
+            IconButton(
+              onPressed: _localStock <= 0
+                  ? null
+                  : () => setState(() => _localStock--),
+              icon: const Icon(Icons.remove_circle_outline, size: 22),
+              color: Theme.of(context).colorScheme.error,
+              visualDensity: VisualDensity.compact,
+            ),
+            Text(
+              '$_localStock',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: _Tokens.textPrimary,
+              ),
+            ),
+            IconButton(
+              onPressed: () => setState(() => _localStock++),
+              icon: const Icon(Icons.add_circle_outline, size: 22),
+              color: _Tokens.statusActive,
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // 操作列
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            IconButton(
+              onPressed: _delete,
+              icon: Icon(Icons.delete_outline,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.error),
+              tooltip: '刪除',
+              visualDensity: VisualDensity.compact,
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: _isSaving ? null : _cancelEdit,
+              child: const Text('取消'),
+            ),
+            const SizedBox(width: 4),
+            FilledButton(
+              onPressed: _isSaving ? null : _save,
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 14, height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('儲存'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
