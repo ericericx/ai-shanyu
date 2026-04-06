@@ -595,7 +595,7 @@ class _ProductTab extends ConsumerWidget {
                         crossAxisCount: cols,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 0.5,
+                        childAspectRatio: 0.42,
                       ),
                       itemCount: products.length,
                       itemBuilder: (context, index) {
@@ -856,9 +856,9 @@ class _ProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 封面圖
-          Expanded(
-            flex: 3,
+          // 封面圖（1:1）
+          AspectRatio(
+            aspectRatio: 1,
             child: product.coverImageUrl.isNotEmpty
                 ? Image.network(
                     product.coverImageUrl,
@@ -912,15 +912,15 @@ class _ProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 _CardActionButton(
-                  icon: Icons.calendar_month_outlined,
-                  label: '農產時程',
-                  onPressed: onEditSeasons,
-                ),
-                const SizedBox(height: 4),
-                _CardActionButton(
                   icon: Icons.edit_note_outlined,
                   label: '編輯內容',
                   onPressed: onEditContent,
+                ),
+                const SizedBox(height: 4),
+                _CardActionButton(
+                  icon: Icons.calendar_month_outlined,
+                  label: '農產時程',
+                  onPressed: onEditSeasons,
                 ),
               ],
             ),
@@ -948,13 +948,13 @@ class _CardActionButton extends StatelessWidget {
       width: double.infinity,
       child: OutlinedButton.icon(
         onPressed: onPressed,
-        icon: Icon(icon, size: 14),
+        icon: Icon(icon, size: 16),
         label: Text(label),
         style: OutlinedButton.styleFrom(
           foregroundColor: _Tokens.brandBrown,
           side: const BorderSide(color: _Tokens.divider),
-          textStyle: const TextStyle(fontSize: 11),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          textStyle: const TextStyle(fontSize: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
