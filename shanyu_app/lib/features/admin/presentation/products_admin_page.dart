@@ -582,25 +582,16 @@ class _ProductTab extends ConsumerWidget {
                   );
                 }
 
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final cols = (constraints.maxWidth / 240)
-                        .floor()
-                        .clamp(1, 4);
-                    return GridView.builder(
-                      padding:
-                          const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                      gridDelegate:
-                          SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: cols,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.42,
-                      ),
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        final product = products[index];
-                        return _ProductCard(
+                return SingleChildScrollView(
+                  padding:
+                      const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: products.map((product) {
+                      return SizedBox(
+                        width: 200,
+                        child: _ProductCard(
                           product: product,
                           categoryName:
                               categoryMap[product.categoryId] ?? '—',
@@ -619,10 +610,10 @@ class _ProductTab extends ConsumerWidget {
                             ref,
                             product,
                           ),
-                        );
-                      },
-                    );
-                  },
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 );
               },
             ),
