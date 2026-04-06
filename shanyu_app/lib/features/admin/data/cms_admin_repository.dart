@@ -71,13 +71,27 @@ class CmsAdminRepository {
   // ── 圖片上傳 ────────────────────────────────────────────────────────────────
 
   /// 上傳圖片至 Firebase Storage `cms/<fileName>`，回傳公開下載 URL。
-  Future<String> uploadImage(Uint8List bytes, String fileName) async {
+  Future<String> uploadImage(
+    Uint8List bytes,
+    String fileName, {
+    void Function(double progress)? onProgress,
+  }) async {
     final ref = _storage.ref('$_kStorageCmsPath/$fileName');
-    final task = await ref.putData(
+    final uploadTask = ref.putData(
       bytes,
       SettableMetadata(contentType: _inferContentType(fileName)),
     );
-    return task.ref.getDownloadURL();
+
+    if (onProgress != null) {
+      uploadTask.snapshotEvents.listen((snapshot) {
+        if (snapshot.totalBytes > 0) {
+          onProgress(snapshot.bytesTransferred / snapshot.totalBytes);
+        }
+      });
+    }
+
+    final snapshot = await uploadTask;
+    return snapshot.ref.getDownloadURL();
   }
 
   // ── helpers ─────────────────────────────────────────────────────────────────

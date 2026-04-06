@@ -477,6 +477,7 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
   Uint8List? _pickedBytes;
   String? _pickedFileName;
   bool _isUploading = false;
+  double _uploadProgress = 0;
 
   _BannerLinkType _linkType = _BannerLinkType.none;
   String? _selectedCategoryId;
@@ -723,20 +724,33 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _isUploading ? null : () => Navigator.of(context).pop(),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          onPressed: _isUploading ? null : _submit,
-          child: _isUploading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(_isEditing ? '儲存變更' : '確認新增'),
-        ),
+        if (_isUploading)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LinearProgressIndicator(value: _uploadProgress),
+                  const SizedBox(height: 4),
+                  Text(
+                    '上傳中 ${(_uploadProgress * 100).toInt()}%',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          )
+        else ...[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: _submit,
+            child: Text(_isEditing ? '儲存變更' : '確認新增'),
+          ),
+        ],
       ],
     );
   }
@@ -768,7 +782,10 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
       return;
     }
 
-    setState(() => _isUploading = true);
+    setState(() {
+      _isUploading = true;
+      _uploadProgress = 0;
+    });
 
     try {
       await ref.read(adminGuardProvider.future);
@@ -777,7 +794,13 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
       if (_pickedBytes != null) {
         final repo = CmsAdminRepository();
         final fileName = '${const Uuid().v4()}_${_pickedFileName!}';
-        imageUrl = await repo.uploadImage(_pickedBytes!, fileName);
+        imageUrl = await repo.uploadImage(
+          _pickedBytes!,
+          fileName,
+          onProgress: (p) {
+            if (mounted) setState(() => _uploadProgress = p);
+          },
+        );
       } else {
         imageUrl = widget.existing!.imageUrl;
       }
