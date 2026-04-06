@@ -473,6 +473,13 @@ class _AddBannerDialogState extends ConsumerState<_AddBannerDialog> {
                                 color: theme.colorScheme.primary,
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '建議比例 5:2（例如 1440×576 px）',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
                           ],
                         ),
                 ),
@@ -695,6 +702,7 @@ class _BrandStoryTabState extends ConsumerState<_BrandStoryTab> {
                             decoration: const InputDecoration(
                               labelText: '圖片 URL',
                               hintText: 'https://...',
+                              helperText: '建議比例 4:3（例如 800×600 px）',
                               border: OutlineInputBorder(),
                             ),
                           ),
