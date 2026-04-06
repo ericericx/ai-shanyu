@@ -593,7 +593,7 @@ class _ProductTab extends ConsumerWidget {
                         crossAxisCount: cols,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 0.75,
+                        childAspectRatio: 0.58,
                       ),
                       itemCount: products.length,
                       itemBuilder: (context, index) {
@@ -839,64 +839,47 @@ class _ProductCard extends StatelessWidget {
           ),
 
           // 資訊區
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          product.name,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: _Tokens.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      _StatusBadge(status: product.status),
-                    ],
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 商品名稱
+                Text(
+                  product.name,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _Tokens.textPrimary,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    categoryName,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: _Tokens.textSecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Spacer(),
-                  // 操作按鈕
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _CardActionButton(
-                          icon: Icons.tune,
-                          label: '狀態',
-                          onPressed: onEditStatus,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: _CardActionButton(
-                          icon: Icons.calendar_month_outlined,
-                          label: '時程',
-                          onPressed: onEditSeasons,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                // 標籤列（狀態 + 分類）
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [
+                    _StatusBadge(status: product.status),
+                    _CategoryBadge(name: categoryName),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // 操作按鈕（垂直排列）
+                _CardActionButton(
+                  icon: Icons.tune,
+                  label: '編輯狀態',
+                  onPressed: onEditStatus,
+                ),
+                const SizedBox(height: 4),
+                _CardActionButton(
+                  icon: Icons.calendar_month_outlined,
+                  label: '農產時程',
+                  onPressed: onEditSeasons,
+                ),
+              ],
             ),
           ),
         ],
@@ -918,17 +901,20 @@ class _CardActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 14),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: _Tokens.brandBrown,
-        side: const BorderSide(color: _Tokens.divider),
-        textStyle: const TextStyle(fontSize: 11),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 14),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: _Tokens.brandBrown,
+          side: const BorderSide(color: _Tokens.divider),
+          textStyle: const TextStyle(fontSize: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
       ),
     );
   }
@@ -979,6 +965,31 @@ class _StatusBadge extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryBadge extends StatelessWidget {
+  const _CategoryBadge({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: _Tokens.brandBrown.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        name,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: _Tokens.brandBrown,
         ),
       ),
     );
