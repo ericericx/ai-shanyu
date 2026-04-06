@@ -201,63 +201,83 @@ class _BannerListTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 寬幅圖片預覽（與 Banner 實際比例一致）
-          AspectRatio(
-            aspectRatio: 2.5,
-            child: banner.imageUrl.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: banner.imageUrl,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) =>
-                        const _ImageErrorPlaceholder(),
-                  )
-                : const _ImageErrorPlaceholder(),
-          ),
-          // 資訊列
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        banner.title ?? '（無標題）',
-                        style: theme.textTheme.bodyLarge,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (banner.linkUrl != null)
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 左側：寬幅圖片預覽 + 標題
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AspectRatio(
+                    aspectRatio: 2.5,
+                    child: banner.imageUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: banner.imageUrl,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) =>
+                                const _ImageErrorPlaceholder(),
+                          )
+                        : const _ImageErrorPlaceholder(),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          banner.linkUrl!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                          ),
+                          banner.title ?? '（無標題）',
+                          style: theme.textTheme.bodyLarge,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                    ],
+                        if (banner.linkUrl != null)
+                          Text(
+                            banner.linkUrl!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 右側：工具欄（拖曳 + 刪除）
+            Container(
+              width: 48,
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: theme.colorScheme.outlineVariant,
+                    width: 0.5,
                   ),
                 ),
-                Icon(
-                  Icons.drag_handle,
-                  color: theme.colorScheme.outlineVariant,
-                ),
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: Icon(Icons.delete_outline,
-                      color: theme.colorScheme.error),
-                  onPressed: onDelete,
-                  tooltip: '刪除',
-                ),
-              ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.drag_handle,
+                    color: theme.colorScheme.outlineVariant,
+                  ),
+                  const SizedBox(height: 8),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline,
+                        color: theme.colorScheme.error),
+                    onPressed: onDelete,
+                    tooltip: '刪除',
+                    iconSize: 20,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
