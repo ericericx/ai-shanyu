@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
+import '../../../shared/utils/price_format.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../products/models/category_model.dart';
@@ -1904,7 +1906,7 @@ class _VariantsDialogState extends State<_VariantsDialog> {
                 Row(
                   children: [
                     Text(
-                      'NT\$ ${v.price}',
+                      formatPrice(v.price),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -1914,7 +1916,7 @@ class _VariantsDialogState extends State<_VariantsDialog> {
                     if (v.comparePrice != null) ...[
                       const SizedBox(width: 6),
                       Text(
-                        'NT\$ ${v.comparePrice}',
+                        formatPrice(v.comparePrice!),
                         style: const TextStyle(
                           fontSize: 11,
                           color: _Tokens.textSecondary,
@@ -3103,7 +3105,7 @@ class _ShelfVariantRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'NT\$ ${v.price}',
+                  formatPrice(v.price),
                   style: const TextStyle(
                     fontSize: 13, color: _Tokens.brandBrown),
                 ),

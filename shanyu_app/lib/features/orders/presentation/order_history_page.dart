@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../shared/utils/price_format.dart';
 import '../../../shared/widgets/app_nav_bar.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../models/order_models.dart';
@@ -202,7 +203,7 @@ class _OrderCard extends StatelessWidget {
                 Expanded(
                   child: _InfoItem(
                     label: '訂單總計',
-                    value: 'NT\$ ${order.total}',
+                    value: formatPrice(order.total),
                     valueColor: _HistoryTokens.brandBrown,
                     valueBold: true,
                   ),

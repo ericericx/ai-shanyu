@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/utils/price_format.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../cart/data/cart_repository.dart';
 import '../../cart/models/cart_models.dart';
@@ -619,7 +620,7 @@ class _VariantSelector extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'NT\$ ${variant.price}',
+                      formatPrice(variant.price),
                       style: TextStyle(
                         fontSize: 12,
                         color: isSelected
@@ -656,7 +657,7 @@ class _PriceDisplay extends StatelessWidget {
         textBaseline: TextBaseline.alphabetic,
         children: [
           Text(
-            'NT\$ ${variant.price}',
+            formatPrice(variant.price),
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w700,
@@ -666,7 +667,7 @@ class _PriceDisplay extends StatelessWidget {
           if (variant.comparePrice != null) ...[
             const SizedBox(width: 10),
             Text(
-              'NT\$ ${variant.comparePrice}',
+              formatPrice(variant.comparePrice!),
               style: TextStyle(
                 fontSize: 16,
                 color: _DetailTokens.textSecondary.withAlpha(153),

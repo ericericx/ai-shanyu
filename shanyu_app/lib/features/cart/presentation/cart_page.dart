@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../shared/utils/price_format.dart';
 import '../../../shared/widgets/app_nav_bar.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../models/cart_models.dart';
@@ -466,7 +467,7 @@ class _CartItemCard extends ConsumerWidget {
                     const Spacer(),
                     // 小計
                     Text(
-                      'NT\$ ${item.subtotal}',
+                      formatPrice(item.subtotal),
                       style: const TextStyle(
                         color: _CartTokens.brandBrown,
                         fontSize: 15,
@@ -724,13 +725,13 @@ class _CheckoutSummary extends StatelessWidget {
           // 商品小計列
           _SummaryRow(
             label: '商品小計',
-            value: 'NT\$ ${cart.totalPrice}',
+            value: formatPrice(cart.totalPrice),
           ),
           const SizedBox(height: 6),
           // 運費列
           _SummaryRow(
             label: '運費',
-            value: _shippingFee == 0 ? '免運費' : 'NT\$ $_shippingFee',
+            value: _shippingFee == 0 ? '免運費' : formatPrice(_shippingFee),
             valueColor: _shippingFee == 0
                 ? const Color(0xFF388E3C)
                 : _CartTokens.textPrimary,
@@ -752,7 +753,7 @@ class _CheckoutSummary extends StatelessWidget {
                 ),
               ),
               Text(
-                'NT\$ $total',
+                formatPrice(total),
                 style: const TextStyle(
                   color: _CartTokens.brandBrown,
                   fontSize: 22,

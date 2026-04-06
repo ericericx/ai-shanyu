@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_nav_bar.dart';
+import '../../../shared/utils/price_format.dart';
 import '../models/category_model.dart';
 import '../models/product_models.dart';
 import '../providers/product_providers.dart';
@@ -550,7 +551,7 @@ class _ProductCardInfo extends StatelessWidget {
                 ),
               if (product.minPrice != null)
                 _Badge(
-                  label: 'NT\$ ${product.minPrice} 起',
+                  label: '${formatPrice(product.minPrice!)} 起',
                   color: _ProductListTokens.brandBrown,
                   bgColor: const Color(0xFFF5F0EC),
                 ),
