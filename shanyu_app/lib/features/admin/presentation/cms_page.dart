@@ -710,40 +710,13 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
                   ),
                 ),
               if (_linkType == _BannerLinkType.product)
-                categoriesAsync.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (_, __) => const Text('無法載入分類'),
-                  data: (categories) => Column(
-                    children: [
-                      DropdownButtonFormField<String>(
-                        initialValue: _productCategoryId,
-                        decoration: const InputDecoration(
-                          labelText: '商品所屬分類',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: categories
-                            .map((c) => DropdownMenuItem(
-                                  value: c.id,
-                                  child: Text(c.name),
-                                ))
-                            .toList(),
-                        onChanged: (v) => setState(() {
-                          _productCategoryId = v;
-                          _selectedProductId = null;
-                        }),
-                        validator: (v) => v == null ? '請選擇分類' : null,
-                      ),
-                      if (_productCategoryId != null) ...[
-                        const SizedBox(height: 12),
-                        _ProductDropdown(
-                          categoryId: _productCategoryId!,
-                          selectedProductId: _selectedProductId,
-                          onChanged: (v) =>
-                              setState(() => _selectedProductId = v),
-                        ),
-                      ],
-                    ],
-                  ),
+                _AllProductsDropdown(
+                  selectedCategoryId: _productCategoryId,
+                  selectedProductId: _selectedProductId,
+                  onChanged: (catId, prodId) => setState(() {
+                    _productCategoryId = catId;
+                    _selectedProductId = prodId;
+                  }),
                 ),
             ],
           ),
@@ -837,44 +810,87 @@ class _BannerFormDialogState extends ConsumerState<_BannerFormDialog> {
   }
 }
 
-// ── _ProductDropdown（依分類載入商品列表）─────────────────────────────────────
+// ── _AllProductsDropdown（所有商品扁平下拉，依分類分組）────────────────────────
 
-class _ProductDropdown extends ConsumerWidget {
-  const _ProductDropdown({
-    required this.categoryId,
+class _AllProductsDropdown extends ConsumerWidget {
+  const _AllProductsDropdown({
+    required this.selectedCategoryId,
     required this.selectedProductId,
     required this.onChanged,
   });
 
-  final String categoryId;
+  final String? selectedCategoryId;
   final String? selectedProductId;
-  final ValueChanged<String?> onChanged;
+  final void Function(String categoryId, String productId) onChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final productsAsync = ref.watch(productsByCategoryProvider(categoryId));
+    final categoriesAsync = ref.watch(categoriesProvider);
 
-    return productsAsync.when(
+    return categoriesAsync.when(
       loading: () => const LinearProgressIndicator(),
       error: (_, __) => const Text('無法載入商品'),
-      data: (products) {
-        if (products.isEmpty) {
-          return const Text('此分類尚無商品');
+      data: (categories) {
+        // 為每個分類載入商品
+        final allItems = <DropdownMenuItem<String>>[];
+        final productCategoryMap = <String, String>{}; // prodId → catId
+
+        for (final cat in categories) {
+          final productsAsync =
+              ref.watch(productsByCategoryProvider(cat.id));
+          final products = productsAsync.valueOrNull ?? [];
+
+          if (products.isEmpty) continue;
+
+          // 分類標題（不可選）
+          allItems.add(DropdownMenuItem<String>(
+            enabled: false,
+            value: '_header_${cat.id}',
+            child: Text(
+              cat.name,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.primary,
+                fontSize: 13,
+              ),
+            ),
+          ));
+
+          for (final p in products) {
+            productCategoryMap[p.id] = cat.id;
+            allItems.add(DropdownMenuItem<String>(
+              value: p.id,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Text(p.name),
+              ),
+            ));
+          }
         }
+
+        if (allItems.isEmpty) {
+          return const Text('尚無商品');
+        }
+
+        // 確認 selectedProductId 存在於選項中
+        final validValue = productCategoryMap.containsKey(selectedProductId)
+            ? selectedProductId
+            : null;
+
         return DropdownButtonFormField<String>(
-          initialValue: selectedProductId,
+          initialValue: validValue,
           decoration: const InputDecoration(
             labelText: '選擇商品',
             border: OutlineInputBorder(),
           ),
-          items: products
-              .map((p) => DropdownMenuItem(
-                    value: p.id,
-                    child: Text(p.name),
-                  ))
-              .toList(),
-          onChanged: onChanged,
-          validator: (v) => v == null ? '請選擇商品' : null,
+          items: allItems,
+          onChanged: (prodId) {
+            if (prodId == null) return;
+            final catId = productCategoryMap[prodId];
+            if (catId != null) onChanged(catId, prodId);
+          },
+          validator: (v) =>
+              v == null || v.startsWith('_header_') ? '請選擇商品' : null,
         );
       },
     );
