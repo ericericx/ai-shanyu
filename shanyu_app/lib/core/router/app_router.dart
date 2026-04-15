@@ -7,6 +7,7 @@ import '../../features/admin/presentation/admin_chat_page.dart';
 import '../../features/admin/presentation/admin_shell.dart';
 import '../../features/admin/presentation/cms_page.dart';
 import '../../features/admin/presentation/crm_page.dart';
+import '../../features/admin/presentation/orders_admin_page.dart';
 import '../../features/admin/presentation/products_admin_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/providers/auth_providers.dart';
@@ -50,22 +51,6 @@ const _protectedRoutes = {
   AppRoutes.profile,
   AppRoutes.admin,
 };
-
-// ── 暫時佔位頁面（待各 Feature 實作後替換） ──────────────────────────────────
-
-class _PlaceholderPage extends StatelessWidget {
-  const _PlaceholderPage({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text(title)),
-    );
-  }
-}
 
 // ── Router Provider ──────────────────────────────────────────────────────────
 
@@ -210,8 +195,7 @@ GoRouter appRouter(Ref ref) {
               GoRoute(
                 path: AppRoutes.adminOrders,
                 name: 'adminOrders',
-                builder: (context, state) =>
-                    const _PlaceholderPage(title: '訂單管理'),
+                builder: (context, state) => const OrdersAdminPage(),
               ),
             ],
           ),
