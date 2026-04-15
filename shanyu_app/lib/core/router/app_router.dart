@@ -20,6 +20,7 @@ import '../../features/orders/presentation/order_success_page.dart';
 import '../../features/products/presentation/product_detail_page.dart';
 import '../../features/products/presentation/product_list_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
+import '../tracking/page_view_providers.dart';
 part 'app_router.g.dart';
 
 // ── 路由名稱常數 ─────────────────────────────────────────────────────────────
@@ -70,6 +71,7 @@ GoRouter appRouter(Ref ref) {
   return GoRouter(
     initialLocation: AppRoutes.home,
     refreshListenable: authStateListenable,
+    observers: [ref.read(pageViewTrackerObserverProvider)],
     redirect: (context, state) {
       final authAsync = ref.read(authStateProvider);
 
