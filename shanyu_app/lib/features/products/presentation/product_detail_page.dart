@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/utils/price_format.dart';
 import '../../auth/providers/auth_providers.dart';
-import '../../cart/data/cart_repository.dart';
 import '../../cart/models/cart_models.dart';
 import '../../cart/providers/cart_providers.dart';
 import '../../../shared/widgets/app_nav_bar.dart';

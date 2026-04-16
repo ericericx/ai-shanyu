@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/app_nav_bar.dart';
-import '../../auth/data/auth_repository.dart';
 import '../../auth/providers/auth_providers.dart';
 
 // ── 設計 Token ────────────────────────────────────────────────────────────────

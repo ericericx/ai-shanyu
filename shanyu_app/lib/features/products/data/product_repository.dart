@@ -59,9 +59,7 @@ class ProductRepository {
       if (!snap.exists) {
         throw Exception('農產 $productId 不存在');
       }
-      return ProductDetailModel.fromFirestore(
-        snap as DocumentSnapshot<Map<String, dynamic>>,
-      );
+      return ProductDetailModel.fromFirestore(snap);
     });
   }
 
