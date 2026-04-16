@@ -172,3 +172,17 @@ class CrmViewsNotifier extends _$CrmViewsNotifier {
 Future<List<PopularProduct>> topProducts(Ref ref, {int limit = 5}) {
   return ref.watch(crmRepositoryProvider).getTopProducts(limit: limit);
 }
+
+// ── 概覽統計 Provider ─────────────────────────────────────────────────────────
+
+@riverpod
+Future<OverviewStats> overviewStats(Ref ref) {
+  return ref.watch(crmRepositoryProvider).getOverviewStats();
+}
+
+// ── 熱門頁面 Provider ─────────────────────────────────────────────────────────
+
+@riverpod
+Future<List<PopularPage>> topPages(Ref ref, {required DateTime since}) {
+  return ref.watch(crmRepositoryProvider).getTopPages(since: since);
+}

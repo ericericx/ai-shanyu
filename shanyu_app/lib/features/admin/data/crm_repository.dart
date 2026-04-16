@@ -23,6 +23,12 @@ class CrmRepository {
   CollectionReference<Map<String, dynamic>> get _viewsCol =>
       _firestore.collection('productViews');
 
+  CollectionReference<Map<String, dynamic>> get _pageViewsCol =>
+      _firestore.collection('pageViews');
+
+  CollectionReference<Map<String, dynamic>> get _ordersCol =>
+      _firestore.collection('orders');
+
   // ── 瀏覽記錄查詢 ──────────────────────────────────────────────────────────
 
   /// 取得商品瀏覽記錄，支援以 productId、日期範圍篩選，以及游標分頁。
@@ -143,6 +149,105 @@ class CrmRepository {
         productId: entry.key,
         productName: nameMap[entry.key],
         viewCount: entry.value,
+      );
+    }).toList();
+  }
+
+  // ── 概覽統計 ──────────────────────────────────────────────────────────────
+
+  /// 取得概覽統計：今日瀏覽數、本月訂單數、本月營收、活躍使用者數。
+  ///
+  /// 三項查詢以 [Future.wait] 平行執行，降低總延遲。
+  Future<OverviewStats> getOverviewStats() async {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final monthStart = DateTime(now.year, now.month, 1);
+
+    final results = await Future.wait([
+      _pageViewsCol
+          .where(
+            'timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart),
+          )
+          .get(),
+      _pageViewsCol
+          .where(
+            'timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(monthStart),
+          )
+          .limit(1000)
+          .get(),
+      _ordersCol
+          .where(
+            'createdAt',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(monthStart),
+          )
+          .get(),
+    ]);
+
+    final todayViews = results[0].docs.length;
+
+    final monthPageViews = results[1].docs;
+    final activeUserIds = <String>{};
+    for (final doc in monthPageViews) {
+      final userId = doc.data()['userId'] as String?;
+      if (userId != null) activeUserIds.add(userId);
+    }
+
+    final orderDocs = results[2].docs;
+    var monthlyRevenue = 0;
+    for (final doc in orderDocs) {
+      final data = doc.data();
+      monthlyRevenue += (data['total'] as int?) ?? 0;
+    }
+
+    return OverviewStats(
+      todayPageViews: todayViews,
+      monthlyOrders: orderDocs.length,
+      monthlyRevenue: monthlyRevenue,
+      activeUsers: activeUserIds.length,
+    );
+  }
+
+  // ── 熱門頁面排行 ──────────────────────────────────────────────────────────
+
+  /// 取得指定時間範圍內瀏覽次數最高的頁面前 [limit] 名。
+  ///
+  /// Client 端對最近 1000 筆 pageViews 做聚合。
+  Future<List<PopularPage>> getTopPages({
+    required DateTime since,
+    int limit = 10,
+  }) async {
+    final snapshot = await _pageViewsCol
+        .where(
+          'timestamp',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(since),
+        )
+        .orderBy('timestamp', descending: true)
+        .limit(1000)
+        .get();
+
+    final countMap = <String, int>{};
+    final titleMap = <String, String>{};
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final path = (data['path'] as String?) ?? '';
+      if (path.isEmpty) continue;
+      countMap[path] = (countMap[path] ?? 0) + 1;
+      if (!titleMap.containsKey(path)) {
+        titleMap[path] = (data['title'] as String?) ?? path;
+      }
+    }
+
+    final sorted = countMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return sorted.take(limit).map((e) {
+      return PopularPage(
+        path: e.key,
+        title: titleMap[e.key] ?? e.key,
+        viewCount: e.value,
       );
     }).toList();
   }

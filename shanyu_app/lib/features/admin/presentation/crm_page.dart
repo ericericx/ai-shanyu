@@ -4,30 +4,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../shared/theme/app_design_tokens.dart';
 import '../models/crm_models.dart';
 import '../providers/crm_providers.dart';
 
-// ── 設計 Token ────────────────────────────────────────────────────────────────
+// ── 本頁設計 Token（引用全站 AppDesignTokens）────────────────────────────────
 
 abstract final class _CrmTokens {
-  static const surface = Color(0xFFFAF8F5);
-  static const brandBrown = Color(0xFFB82020);
-  static const brandBrownLight = Color(0xFF9C1B1B);
-  static const textPrimary = Color(0xFF2D2118);
-  static const textSecondary = Color(0xFF6D4C41);
-  static const divider = Color(0xFFEFEBE9);
+  static const surface = AppDesignTokens.surfaceAlt;
+  static const brandRed = AppDesignTokens.brandRed;
+  static const brandRedDark = AppDesignTokens.brandRedDark;
+  static const textPrimary = AppDesignTokens.textPrimary;
+  static const textSecondary = AppDesignTokens.textSecondary;
+  static const divider = AppDesignTokens.divider;
   static const cardBg = Colors.white;
   static const rankGold = Color(0xFFFFB300);
   static const rankSilver = Color(0xFF9E9E9E);
   static const rankBronze = Color(0xFF8D6E63);
 
   static const cardBorderRadius = 12.0;
-  static const sectionPadding = EdgeInsets.all(16.0);
+  static const cardPadding = 20.0;
 }
 
-// ── CrmPage ───────────────────────────────────────────────────────────────────
+// ── CrmPage（三 Tab 主頁）────────────────────────────────────────────────────
 
-/// 後台 CRM — 商品瀏覽記錄查詢頁面（路由 `/admin/crm`）。
+/// 後台 CRM 分析儀表板（路由 `/admin/crm`）。
+///
+/// 包含三個頁籤：概覽、頁面分析、商品分析。
 class CrmPage extends ConsumerStatefulWidget {
   const CrmPage({super.key});
 
@@ -35,7 +38,474 @@ class CrmPage extends ConsumerStatefulWidget {
   ConsumerState<CrmPage> createState() => _CrmPageState();
 }
 
-class _CrmPageState extends ConsumerState<CrmPage> {
+class _CrmPageState extends ConsumerState<CrmPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _CrmTokens.surface,
+      appBar: AppBar(
+        title: const Text(
+          'CRM 分析',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: _CrmTokens.textPrimary,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: _CrmTokens.brandRed),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: _CrmTokens.brandRed,
+          unselectedLabelColor: _CrmTokens.textSecondary,
+          indicatorColor: _CrmTokens.brandRed,
+          indicatorWeight: 2.5,
+          labelStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+          ),
+          tabs: const [
+            Tab(text: '概覽'),
+            Tab(text: '頁面分析'),
+            Tab(text: '商品分析'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: const [
+          _OverviewTab(),
+          _PageAnalyticsTab(),
+          _ProductAnalyticsTab(),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tab 0：概覽 ───────────────────────────────────────────────────────────────
+
+class _OverviewTab extends ConsumerWidget {
+  const _OverviewTab();
+
+  static final _currencyFormat = NumberFormat('#,###', 'zh_TW');
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(overviewStatsProvider);
+
+    return statsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            '載入失敗：$e',
+            style: const TextStyle(color: Colors.red, fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+      data: (stats) => _OverviewGrid(
+        stats: stats,
+        currencyFormat: _currencyFormat,
+      ),
+    );
+  }
+}
+
+class _OverviewGrid extends StatelessWidget {
+  const _OverviewGrid({
+    required this.stats,
+    required this.currencyFormat,
+  });
+
+  final OverviewStats stats;
+  final NumberFormat currencyFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < AppDesignTokens.mobileBreakpoint;
+
+    final cards = [
+      _StatCard(
+        icon: Icons.visibility_outlined,
+        label: '今日瀏覽數',
+        value: stats.todayPageViews.toString(),
+        iconColor: const Color(0xFF1976D2),
+      ),
+      _StatCard(
+        icon: Icons.shopping_bag_outlined,
+        label: '本月訂單數',
+        value: stats.monthlyOrders.toString(),
+        iconColor: const Color(0xFF388E3C),
+      ),
+      _StatCard(
+        icon: Icons.attach_money_outlined,
+        label: '本月營收',
+        value: 'NT\$${currencyFormat.format(stats.monthlyRevenue)}',
+        iconColor: _CrmTokens.brandRed,
+      ),
+      _StatCard(
+        icon: Icons.people_outline,
+        label: '活躍用戶數',
+        value: stats.activeUsers.toString(),
+        iconColor: const Color(0xFF7B1FA2),
+      ),
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: isMobile
+          ? Column(
+              children: cards
+                  .map((c) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: c,
+                      ))
+                  .toList(),
+            )
+          : GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              shrinkWrap: true,
+              childAspectRatio: 2.4,
+              physics: const NeverScrollableScrollPhysics(),
+              children: cards,
+            ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.iconColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: _CrmTokens.cardBg,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(_CrmTokens.cardBorderRadius),
+        side: const BorderSide(color: _CrmTokens.divider),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(_CrmTokens.cardPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 圓形 Icon container
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.10),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 20, color: iconColor),
+            ),
+            const SizedBox(height: 12),
+            // 指標名稱
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: _CrmTokens.textSecondary,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // 數值
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: _CrmTokens.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Tab 1：頁面分析 ───────────────────────────────────────────────────────────
+
+enum _TimeRange { today, last7Days, last30Days }
+
+extension _TimeRangeExt on _TimeRange {
+  String get label {
+    switch (this) {
+      case _TimeRange.today:
+        return '今日';
+      case _TimeRange.last7Days:
+        return '近 7 天';
+      case _TimeRange.last30Days:
+        return '近 30 天';
+    }
+  }
+
+  DateTime get since {
+    final now = DateTime.now();
+    switch (this) {
+      case _TimeRange.today:
+        return DateTime(now.year, now.month, now.day);
+      case _TimeRange.last7Days:
+        return now.subtract(const Duration(days: 7));
+      case _TimeRange.last30Days:
+        return now.subtract(const Duration(days: 30));
+    }
+  }
+}
+
+class _PageAnalyticsTab extends ConsumerStatefulWidget {
+  const _PageAnalyticsTab();
+
+  @override
+  ConsumerState<_PageAnalyticsTab> createState() => _PageAnalyticsTabState();
+}
+
+class _PageAnalyticsTabState extends ConsumerState<_PageAnalyticsTab> {
+  _TimeRange _selected = _TimeRange.last7Days;
+
+  @override
+  Widget build(BuildContext context) {
+    final pagesAsync =
+        ref.watch(topPagesProvider(since: _selected.since));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 時間篩選列
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Wrap(
+            spacing: 8,
+            children: _TimeRange.values.map((range) {
+              final isSelected = _selected == range;
+              return ChoiceChip(
+                label: Text(range.label),
+                selected: isSelected,
+                onSelected: (_) => setState(() => _selected = range),
+                selectedColor: _CrmTokens.brandRed.withValues(alpha: 0.12),
+                backgroundColor: _CrmTokens.surface,
+                labelStyle: TextStyle(
+                  fontSize: 13,
+                  fontWeight:
+                      isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: isSelected
+                      ? _CrmTokens.brandRed
+                      : _CrmTokens.textSecondary,
+                ),
+                side: BorderSide(
+                  color: isSelected
+                      ? _CrmTokens.brandRed
+                      : _CrmTokens.divider,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const Divider(height: 1, color: _CrmTokens.divider),
+
+        // 頁面排行列表
+        Expanded(
+          child: pagesAsync.when(
+            loading: () =>
+                const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  '載入失敗：$e',
+                  style: const TextStyle(color: Colors.red, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            data: (pages) {
+              if (pages.isEmpty) {
+                return const Center(
+                  child: Text(
+                    '該時間範圍內無瀏覽紀錄',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _CrmTokens.textSecondary,
+                    ),
+                  ),
+                );
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
+                itemCount: pages.length,
+                separatorBuilder: (context2, index2) =>
+                    const SizedBox(height: 8),
+                itemBuilder: (context, index) => _PageRankCard(
+                  rank: index + 1,
+                  page: pages[index],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PageRankCard extends StatelessWidget {
+  const _PageRankCard({required this.rank, required this.page});
+
+  final int rank;
+  final PopularPage page;
+
+  Color get _rankColor {
+    switch (rank) {
+      case 1:
+        return _CrmTokens.rankGold;
+      case 2:
+        return _CrmTokens.rankSilver;
+      case 3:
+        return _CrmTokens.rankBronze;
+      default:
+        return _CrmTokens.textSecondary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: _CrmTokens.cardBg,
+        borderRadius:
+            BorderRadius.circular(_CrmTokens.cardBorderRadius),
+        border: Border.all(color: _CrmTokens.divider),
+      ),
+      child: Row(
+        children: [
+          // 排名圓形標示
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: _rankColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '$rank',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: _rankColor,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // 頁面標題 + 路徑
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  page.title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: _CrmTokens.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  page.path,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: _CrmTokens.textSecondary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          // 瀏覽次數
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: _CrmTokens.brandRed.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${page.viewCount} 次',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: _CrmTokens.brandRed,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tab 2：商品分析（原 crm_page.dart 全部內容移入）────────────────────────────
+
+class _ProductAnalyticsTab extends ConsumerStatefulWidget {
+  const _ProductAnalyticsTab();
+
+  @override
+  ConsumerState<_ProductAnalyticsTab> createState() =>
+      _ProductAnalyticsTabState();
+}
+
+class _ProductAnalyticsTabState
+    extends ConsumerState<_ProductAnalyticsTab> {
   final _productIdController = TextEditingController();
   final _scrollController = ScrollController();
 
@@ -47,11 +517,9 @@ class _CrmPageState extends ConsumerState<CrmPage> {
   @override
   void initState() {
     super.initState();
-    // 初始載入
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(crmViewsNotifierProvider.notifier).loadInitial();
     });
-
     _scrollController.addListener(_onScroll);
   }
 
@@ -79,7 +547,7 @@ class _CrmPageState extends ConsumerState<CrmPage> {
       builder: (context, child) => Theme(
         data: ThemeData.light().copyWith(
           colorScheme: const ColorScheme.light(
-            primary: _CrmTokens.brandBrown,
+            primary: _CrmTokens.brandRed,
           ),
         ),
         child: child!,
@@ -121,69 +589,46 @@ class _CrmPageState extends ConsumerState<CrmPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _CrmTokens.surface,
-      appBar: AppBar(
-        title: const Text(
-          '商品瀏覽記錄',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: _CrmTokens.textPrimary,
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        // 篩選列
+        SliverToBoxAdapter(
+          child: _SearchBar(
+            productIdController: _productIdController,
+            startDate: _startDate,
+            endDate: _endDate,
+            onPickStartDate: () => _pickDate(isStart: true),
+            onPickEndDate: () => _pickDate(isStart: false),
+            onApply: _applySearch,
+            onClear: _clearSearch,
+            dateFormat: _dateInputFormat,
           ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: _CrmTokens.brandBrown),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 1,
-            color: _CrmTokens.divider,
-          ),
+
+        // 熱門商品排行
+        const SliverToBoxAdapter(
+          child: _TopProductsSection(),
         ),
-      ),
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          // 篩選列
-          SliverToBoxAdapter(
-            child: _SearchBar(
-              productIdController: _productIdController,
-              startDate: _startDate,
-              endDate: _endDate,
-              onPickStartDate: () => _pickDate(isStart: true),
-              onPickEndDate: () => _pickDate(isStart: false),
-              onApply: _applySearch,
-              onClear: _clearSearch,
-              dateFormat: _dateInputFormat,
-            ),
-          ),
 
-          // 熱門商品排行
-          const SliverToBoxAdapter(
-            child: _TopProductsSection(),
-          ),
-
-          // 瀏覽記錄列表標頭
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: const Text(
-                '瀏覽記錄',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: _CrmTokens.textPrimary,
-                ),
+        // 瀏覽記錄列表標頭
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: const Text(
+              '瀏覽記錄',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: _CrmTokens.textPrimary,
               ),
             ),
           ),
+        ),
 
-          // 記錄列表
-          const _ViewRecordsList(),
-        ],
-      ),
+        // 記錄列表
+        const _ViewRecordsList(),
+      ],
     );
   }
 }
@@ -234,7 +679,7 @@ class _SearchBar extends StatelessWidget {
               ),
               prefixIcon: const Icon(
                 Icons.search,
-                color: _CrmTokens.brandBrownLight,
+                color: _CrmTokens.brandRedDark,
                 size: 20,
               ),
               contentPadding: const EdgeInsets.symmetric(
@@ -254,7 +699,7 @@ class _SearchBar extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(
-                  color: _CrmTokens.brandBrown,
+                  color: _CrmTokens.brandRed,
                   width: 1.5,
                 ),
               ),
@@ -298,7 +743,7 @@ class _SearchBar extends StatelessWidget {
               FilledButton(
                 onPressed: onApply,
                 style: FilledButton.styleFrom(
-                  backgroundColor: _CrmTokens.brandBrown,
+                  backgroundColor: _CrmTokens.brandRed,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -366,11 +811,11 @@ class _DatePickerChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
           color: hasValue
-              ? _CrmTokens.brandBrown.withValues(alpha: 0.06)
+              ? _CrmTokens.brandRed.withValues(alpha: 0.06)
               : _CrmTokens.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: hasValue ? _CrmTokens.brandBrown : _CrmTokens.divider,
+            color: hasValue ? _CrmTokens.brandRed : _CrmTokens.divider,
           ),
         ),
         child: Row(
@@ -379,7 +824,7 @@ class _DatePickerChip extends StatelessWidget {
               Icons.calendar_today_outlined,
               size: 14,
               color: hasValue
-                  ? _CrmTokens.brandBrown
+                  ? _CrmTokens.brandRed
                   : _CrmTokens.textSecondary,
             ),
             const SizedBox(width: 6),
@@ -389,7 +834,7 @@ class _DatePickerChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   color: hasValue
-                      ? _CrmTokens.brandBrown
+                      ? _CrmTokens.brandRed
                       : _CrmTokens.textSecondary,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -550,7 +995,7 @@ class _TopProductCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: _CrmTokens.brandBrown.withValues(alpha: 0.08),
+              color: _CrmTokens.brandRed.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -558,7 +1003,7 @@ class _TopProductCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: _CrmTokens.brandBrown,
+                color: _CrmTokens.brandRed,
               ),
             ),
           ),
@@ -642,9 +1087,7 @@ class _ViewRecordsList extends ConsumerWidget {
               : userId;
 
           return Container(
-            color: isEven
-                ? Colors.white
-                : _CrmTokens.surface,
+            color: isEven ? Colors.white : _CrmTokens.surface,
             padding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 12,

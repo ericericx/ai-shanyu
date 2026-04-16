@@ -50,3 +50,35 @@ class PopularProduct {
   final String? productName;
   final int viewCount;
 }
+
+/// 概覽統計資料。
+class OverviewStats {
+  const OverviewStats({
+    required this.todayPageViews,
+    required this.monthlyOrders,
+    required this.monthlyRevenue,
+    required this.activeUsers,
+  });
+
+  final int todayPageViews;
+  final int monthlyOrders;
+
+  /// 本月累計營收，單位新台幣。
+  final int monthlyRevenue;
+
+  /// 本月不重複登入使用者數。
+  final int activeUsers;
+}
+
+/// 熱門頁面排行項目。
+class PopularPage {
+  const PopularPage({
+    required this.path,
+    required this.title,
+    required this.viewCount,
+  });
+
+  final String path;
+  final String title;
+  final int viewCount;
+}

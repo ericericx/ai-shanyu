@@ -164,6 +164,140 @@ class _TopProductsProviderElement
   int get limit => (origin as TopProductsProvider).limit;
 }
 
+String _$overviewStatsHash() => r'1f4de5e75e1cf71ee59a42e5377a6a8395ace0e4';
+
+/// See also [overviewStats].
+@ProviderFor(overviewStats)
+final overviewStatsProvider = AutoDisposeFutureProvider<OverviewStats>.internal(
+  overviewStats,
+  name: r'overviewStatsProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$overviewStatsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef OverviewStatsRef = AutoDisposeFutureProviderRef<OverviewStats>;
+String _$topPagesHash() => r'e17c5c08051ac0a1b8b235328f6a05757148385c';
+
+/// See also [topPages].
+@ProviderFor(topPages)
+const topPagesProvider = TopPagesFamily();
+
+/// See also [topPages].
+class TopPagesFamily extends Family<AsyncValue<List<PopularPage>>> {
+  /// See also [topPages].
+  const TopPagesFamily();
+
+  /// See also [topPages].
+  TopPagesProvider call({required DateTime since}) {
+    return TopPagesProvider(since: since);
+  }
+
+  @override
+  TopPagesProvider getProviderOverride(covariant TopPagesProvider provider) {
+    return call(since: provider.since);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'topPagesProvider';
+}
+
+/// See also [topPages].
+class TopPagesProvider extends AutoDisposeFutureProvider<List<PopularPage>> {
+  /// See also [topPages].
+  TopPagesProvider({required DateTime since})
+    : this._internal(
+        (ref) => topPages(ref as TopPagesRef, since: since),
+        from: topPagesProvider,
+        name: r'topPagesProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$topPagesHash,
+        dependencies: TopPagesFamily._dependencies,
+        allTransitiveDependencies: TopPagesFamily._allTransitiveDependencies,
+        since: since,
+      );
+
+  TopPagesProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.since,
+  }) : super.internal();
+
+  final DateTime since;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<PopularPage>> Function(TopPagesRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: TopPagesProvider._internal(
+        (ref) => create(ref as TopPagesRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        since: since,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<PopularPage>> createElement() {
+    return _TopPagesProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TopPagesProvider && other.since == since;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, since.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin TopPagesRef on AutoDisposeFutureProviderRef<List<PopularPage>> {
+  /// The parameter `since` of this provider.
+  DateTime get since;
+}
+
+class _TopPagesProviderElement
+    extends AutoDisposeFutureProviderElement<List<PopularPage>>
+    with TopPagesRef {
+  _TopPagesProviderElement(super.provider);
+
+  @override
+  DateTime get since => (origin as TopPagesProvider).since;
+}
+
 String _$crmViewsNotifierHash() => r'7318680c37ab1d9674375a01783cb5c337d466b2';
 
 /// 瀏覽記錄分頁 Notifier。
