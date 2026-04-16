@@ -19,11 +19,17 @@ class ProductViewTracker {
   /// 寫入商品瀏覽記錄。
   ///
   /// - [productId]：被瀏覽的商品 ID
+  /// - [productName]：商品名稱，供後台 CRM 直接顯示
   /// - [userId]：目前登入的使用者 UID；匿名瀏覽時傳入 null
-  Future<void> trackProductView(String productId, String? userId) async {
+  Future<void> trackProductView(
+    String productId,
+    String? userId, {
+    String? productName,
+  }) async {
     try {
       await _firestore.collection('productViews').add({
         'productId': productId,
+        if (productName != null) 'productName': productName,
         'userId': userId,
         'viewedAt': FieldValue.serverTimestamp(),
       });

@@ -115,15 +115,23 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     }
   }
 
+  bool _hasTracked = false;
+
   @override
   void initState() {
     super.initState();
-    // 在第一幀結束後觸發追蹤，確保 ref 已完成掛載
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final userId = ref.read(currentUserProvider)?.uid;
-      ProductViewTracker().trackProductView(widget.productId, userId);
-    });
+  }
+
+  /// 在商品資料載入完成後觸發追蹤（含 productName）。
+  void _trackIfNeeded(String productName) {
+    if (_hasTracked) return;
+    _hasTracked = true;
+    final userId = ref.read(currentUserProvider)?.uid;
+    ProductViewTracker().trackProductView(
+      widget.productId,
+      userId,
+      productName: productName,
+    );
   }
 
   @override
@@ -143,7 +151,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
       body: detailAsync.when(
         loading: () => const _DetailSkeleton(),
         error: (error, _) => _DetailError(message: error.toString()),
-        data: (detail) => _DetailScrollBody(
+        data: (detail) {
+          _trackIfNeeded(detail.name);
+          return _DetailScrollBody(
           detail: detail,
           variants: variantsAsync.valueOrNull ?? [],
           selectedVariantIndex: _selectedVariantIndex,
@@ -161,7 +171,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               }
             });
           },
-        ),
+        );
+        },
       ),
       bottomNavigationBar: detailAsync.valueOrNull == null
           ? null
