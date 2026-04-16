@@ -50,9 +50,9 @@ shanyu_app/.dart_tool/
 service-account*.json
 google-services.json
 GoogleService-Info.plist
-# Firebase options（含 API key，由 flutter-artisan 管理）
-shanyu_app/lib/firebase_options_development.dart
-shanyu_app/lib/firebase_options_production.dart
+# Firebase options — client-side config（API key 為公開值，需 commit 供 CI build）
+# shanyu_app/lib/firebase_options_development.dart
+# shanyu_app/lib/firebase_options_production.dart
 
 # ============================================================
 # IDE / 系統
