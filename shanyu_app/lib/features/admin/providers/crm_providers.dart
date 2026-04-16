@@ -109,9 +109,11 @@ class CrmViewsNotifier extends _$CrmViewsNotifier {
             limit: _pageSize,
           );
 
-      final records = docs
+      var records = docs
           .map((d) => ProductViewRecord.fromFirestore(d))
           .toList();
+
+      records = await _enrichWithProductNames(records);
 
       state = state.copyWith(
         records: records,
@@ -125,6 +127,36 @@ class CrmViewsNotifier extends _$CrmViewsNotifier {
         errorMessage: '載入失敗：$e',
       );
     }
+  }
+
+  /// 為缺少 productName 的記錄反查 products 集合。
+  Future<List<ProductViewRecord>> _enrichWithProductNames(
+    List<ProductViewRecord> records,
+  ) async {
+    final repo = ref.read(crmRepositoryProvider);
+    final missingIds = records
+        .where((r) => r.productName == null || r.productName!.isEmpty)
+        .map((r) => r.productId)
+        .where((id) => id.isNotEmpty)
+        .toSet();
+
+    if (missingIds.isEmpty) return records;
+
+    final nameMap = await repo.resolveProductNames(missingIds);
+
+    return records.map((r) {
+      if ((r.productName == null || r.productName!.isEmpty) &&
+          nameMap.containsKey(r.productId)) {
+        return ProductViewRecord(
+          id: r.id,
+          productId: r.productId,
+          productName: nameMap[r.productId],
+          userId: r.userId,
+          viewedAt: r.viewedAt,
+        );
+      }
+      return r;
+    }).toList();
   }
 
   Future<void> loadMore() async {
@@ -142,9 +174,11 @@ class CrmViewsNotifier extends _$CrmViewsNotifier {
             lastDoc: lastDoc,
           );
 
-      final newRecords = newDocs
+      var newRecords = newDocs
           .map((d) => ProductViewRecord.fromFirestore(d))
           .toList();
+
+      newRecords = await _enrichWithProductNames(newRecords);
 
       state = state.copyWith(
         records: [...state.records, ...newRecords],

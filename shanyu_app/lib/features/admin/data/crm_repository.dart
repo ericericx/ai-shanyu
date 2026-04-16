@@ -23,8 +23,44 @@ class CrmRepository {
   CollectionReference<Map<String, dynamic>> get _viewsCol =>
       _firestore.collection('productViews');
 
+  CollectionReference<Map<String, dynamic>> get _productsCol =>
+      _firestore.collection('products');
+
   CollectionReference<Map<String, dynamic>> get _pageViewsCol =>
       _firestore.collection('pageViews');
+
+  /// 快取：productId → productName，避免重複查詢
+  final Map<String, String> _productNameCache = {};
+
+  /// 根據 productId 批量查詢商品名稱，回傳 id→name 對應表。
+  Future<Map<String, String>> resolveProductNames(Set<String> ids) async {
+    final result = <String, String>{};
+    final toFetch = <String>[];
+
+    for (final id in ids) {
+      if (_productNameCache.containsKey(id)) {
+        result[id] = _productNameCache[id]!;
+      } else {
+        toFetch.add(id);
+      }
+    }
+
+    if (toFetch.isNotEmpty) {
+      final futures = toFetch.map((id) => _productsCol.doc(id).get());
+      final docs = await Future.wait(futures);
+      for (final doc in docs) {
+        if (doc.exists) {
+          final name = (doc.data()?['name'] as String?) ?? '';
+          if (name.isNotEmpty) {
+            _productNameCache[doc.id] = name;
+            result[doc.id] = name;
+          }
+        }
+      }
+    }
+
+    return result;
+  }
 
   CollectionReference<Map<String, dynamic>> get _ordersCol =>
       _firestore.collection('orders');
@@ -144,7 +180,19 @@ class CrmRepository {
     final sorted = countMap.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    return sorted.take(limit).map((entry) {
+    final topEntries = sorted.take(limit).toList();
+
+    // 對缺少 productName 的商品，從 products 集合反查名稱
+    final missingIds = topEntries
+        .where((e) => !nameMap.containsKey(e.key))
+        .map((e) => e.key)
+        .toSet();
+    if (missingIds.isNotEmpty) {
+      final resolved = await resolveProductNames(missingIds);
+      nameMap.addAll(resolved);
+    }
+
+    return topEntries.map((entry) {
       return PopularProduct(
         productId: entry.key,
         productName: nameMap[entry.key],
