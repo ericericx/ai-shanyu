@@ -19,10 +19,11 @@ class OrderRepository {
 
   /// 呼叫後端 `createOrder` Callable Function，成功後回傳訂單 ID。
   ///
-  /// 傳入購物車商品清單與收件地址，後端負責計算運費與總計。
+  /// 傳入購物車商品清單、收件地址與付款方式，後端負責計算運費與總計。
   Future<String> createOrder({
     required List<CartItem> items,
     required ShippingAddress address,
+    required PaymentMethod paymentMethod,
     String? note,
   }) async {
     final callable = _functions.httpsCallable('createOrder');
@@ -46,6 +47,7 @@ class OrderRepository {
     final result = await callable.call<Map<String, dynamic>>({
       'items': itemsPayload,
       'shippingAddress': address.toMap(),
+      'paymentMethod': paymentMethod.name,
       if (note != null && note.isNotEmpty) 'note': note,
     });
 

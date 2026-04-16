@@ -1,5 +1,6 @@
 // lib/features/orders/models/order_models.dart
 
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ── OrderStatus ───────────────────────────────────────────────────────────────
@@ -36,6 +37,60 @@ enum OrderStatus {
         return '已送達';
       case OrderStatus.cancelled:
         return '已取消';
+    }
+  }
+}
+
+// ── PaymentMethod ─────────────────────────────────────────────────────────────
+
+/// 付款方式列舉。
+enum PaymentMethod {
+  cod,
+  bankTransfer,
+  creditCard;
+
+  /// 從字串解析付款方式，無法識別或為 null 時回傳 null。
+  static PaymentMethod? fromString(String? value) {
+    if (value == null) return null;
+    return PaymentMethod.values.firstWhere(
+      (m) => m.name == value,
+      orElse: () => PaymentMethod.cod,
+    );
+  }
+
+  /// 中文顯示名稱。
+  String get label {
+    switch (this) {
+      case PaymentMethod.cod:
+        return '貨到付款';
+      case PaymentMethod.bankTransfer:
+        return '銀行轉帳';
+      case PaymentMethod.creditCard:
+        return '信用卡';
+    }
+  }
+
+  /// 付款方式說明文字。
+  String get description {
+    switch (this) {
+      case PaymentMethod.cod:
+        return '收到商品時以現金付款';
+      case PaymentMethod.bankTransfer:
+        return '下單後以 ATM 或網銀轉帳';
+      case PaymentMethod.creditCard:
+        return '使用信用卡線上付款';
+    }
+  }
+
+  /// 對應圖示。
+  IconData get icon {
+    switch (this) {
+      case PaymentMethod.cod:
+        return Icons.local_shipping;
+      case PaymentMethod.bankTransfer:
+        return Icons.account_balance;
+      case PaymentMethod.creditCard:
+        return Icons.credit_card;
     }
   }
 }
@@ -155,6 +210,7 @@ class OrderModel {
     required this.status,
     required this.shippingAddress,
     required this.createdAt,
+    this.paymentMethod,
     this.note,
   });
 
@@ -173,6 +229,9 @@ class OrderModel {
 
   final OrderStatus status;
   final ShippingAddress shippingAddress;
+
+  /// 付款方式（選填，歷史訂單可能無此欄位）
+  final PaymentMethod? paymentMethod;
 
   /// 備註（選填）
   final String? note;
@@ -206,6 +265,7 @@ class OrderModel {
       total: (map['total'] as int?) ?? 0,
       status: OrderStatus.fromString((map['status'] as String?) ?? 'pending'),
       shippingAddress: ShippingAddress.fromMap(addressMap),
+      paymentMethod: PaymentMethod.fromString(map['paymentMethod'] as String?),
       note: map['note'] as String?,
       createdAt: createdAt,
     );

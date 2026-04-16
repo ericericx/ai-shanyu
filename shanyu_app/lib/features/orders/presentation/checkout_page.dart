@@ -60,6 +60,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   final _postalCodeController = TextEditingController();
   final _noteController = TextEditingController();
 
+  // 步驟與付款狀態
+  int _currentStep = 0; // 0 = 收件資訊, 1 = 付款方式
+  PaymentMethod _selectedPayment = PaymentMethod.cod;
+
   bool _isSubmitting = false;
 
   @override
@@ -94,6 +98,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       final orderId = await repo.createOrder(
         items: cartItems,
         address: address,
+        paymentMethod: _selectedPayment,
         note: note.isNotEmpty ? note : null,
       );
 
@@ -155,6 +160,15 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         postalCodeController: _postalCodeController,
         noteController: _noteController,
         isSubmitting: _isSubmitting,
+        currentStep: _currentStep,
+        selectedPayment: _selectedPayment,
+        onStepForward: () {
+          if (_formKey.currentState!.validate()) {
+            setState(() => _currentStep = 1);
+          }
+        },
+        onStepBack: () => setState(() => _currentStep = 0),
+        onPaymentChanged: (method) => setState(() => _selectedPayment = method),
         onSubmit: _submitOrder,
       ),
     );
@@ -173,6 +187,11 @@ class _CheckoutBody extends ConsumerWidget {
     required this.postalCodeController,
     required this.noteController,
     required this.isSubmitting,
+    required this.currentStep,
+    required this.selectedPayment,
+    required this.onStepForward,
+    required this.onStepBack,
+    required this.onPaymentChanged,
     required this.onSubmit,
   });
 
@@ -184,6 +203,11 @@ class _CheckoutBody extends ConsumerWidget {
   final TextEditingController postalCodeController;
   final TextEditingController noteController;
   final bool isSubmitting;
+  final int currentStep;
+  final PaymentMethod selectedPayment;
+  final VoidCallback onStepForward;
+  final VoidCallback onStepBack;
+  final ValueChanged<PaymentMethod> onPaymentChanged;
   final Future<void> Function(List<CartItem>) onSubmit;
 
   @override
@@ -214,26 +238,41 @@ class _CheckoutBody extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 訂單摘要區塊
+                // 訂單摘要區塊（常駐顯示）
                 _OrderSummarySection(cart: cart),
                 const SizedBox(height: 24),
 
-                // 收件資訊表單
-                _ShippingFormSection(
-                  nameController: nameController,
-                  phoneController: phoneController,
-                  addressController: addressController,
-                  cityController: cityController,
-                  postalCodeController: postalCodeController,
-                  noteController: noteController,
-                ),
-                const SizedBox(height: 32),
+                // 步驟指示器
+                _StepIndicator(currentStep: currentStep),
+                const SizedBox(height: 24),
 
-                // 送出按鈕
-                _SubmitButton(
-                  isSubmitting: isSubmitting,
-                  onPressed: () => onSubmit(cart.items),
-                ),
+                // Step 1：收件資訊
+                if (currentStep == 0) ...[
+                  _ShippingFormSection(
+                    nameController: nameController,
+                    phoneController: phoneController,
+                    addressController: addressController,
+                    cityController: cityController,
+                    postalCodeController: postalCodeController,
+                    noteController: noteController,
+                  ),
+                  const SizedBox(height: 32),
+                  _NextStepButton(onPressed: onStepForward),
+                ],
+
+                // Step 2：付款方式
+                if (currentStep == 1) ...[
+                  _PaymentMethodSection(
+                    selectedPayment: selectedPayment,
+                    onChanged: onPaymentChanged,
+                  ),
+                  const SizedBox(height: 32),
+                  _StepTwoButtons(
+                    isSubmitting: isSubmitting,
+                    onBack: onStepBack,
+                    onSubmit: () => onSubmit(cart.items),
+                  ),
+                ],
               ],
             ),
           ),
@@ -676,15 +715,250 @@ class _FormField extends StatelessWidget {
   }
 }
 
-// ── 送出按鈕 ──────────────────────────────────────────────────────────────────
+// ── 步驟指示器 ────────────────────────────────────────────────────────────────
 
-class _SubmitButton extends StatelessWidget {
-  const _SubmitButton({
-    required this.isSubmitting,
-    required this.onPressed,
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator({required this.currentStep});
+
+  final int currentStep;
+
+  static const _stepLabels = ['收件資訊', '付款方式'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (int i = 0; i < _stepLabels.length; i++) ...[
+          _StepDot(
+            index: i + 1,
+            label: _stepLabels[i],
+            isActive: i == currentStep,
+            isCompleted: i < currentStep,
+          ),
+          if (i < _stepLabels.length - 1)
+            Expanded(
+              child: Container(
+                height: 2,
+                margin: const EdgeInsets.only(bottom: 18),
+                color: currentStep > i
+                    ? _CheckoutTokens.brandBrown
+                    : _CheckoutTokens.dividerColor,
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StepDot extends StatelessWidget {
+  const _StepDot({
+    required this.index,
+    required this.label,
+    required this.isActive,
+    required this.isCompleted,
   });
 
-  final bool isSubmitting;
+  final int index;
+  final String label;
+  final bool isActive;
+  final bool isCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color circleColor;
+    final Color textColor;
+    final Widget circleChild;
+
+    if (isCompleted) {
+      circleColor = _CheckoutTokens.brandBrown;
+      textColor = _CheckoutTokens.brandBrown;
+      circleChild = const Icon(Icons.check, color: Colors.white, size: 14);
+    } else if (isActive) {
+      circleColor = _CheckoutTokens.brandBrown;
+      textColor = _CheckoutTokens.brandBrown;
+      circleChild = Text(
+        '$index',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      );
+    } else {
+      circleColor = _CheckoutTokens.dividerColor;
+      textColor = _CheckoutTokens.textSecondary;
+      circleChild = Text(
+        '$index',
+        style: const TextStyle(
+          color: _CheckoutTokens.textSecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: circleColor,
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: circleChild,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── 付款方式選擇區塊 ──────────────────────────────────────────────────────────
+
+class _PaymentMethodSection extends StatelessWidget {
+  const _PaymentMethodSection({
+    required this.selectedPayment,
+    required this.onChanged,
+  });
+
+  final PaymentMethod selectedPayment;
+  final ValueChanged<PaymentMethod> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: '選擇付款方式',
+      child: Column(
+        children: PaymentMethod.values
+            .map(
+              (method) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _PaymentMethodCard(
+                  method: method,
+                  isSelected: selectedPayment == method,
+                  onTap: () => onChanged(method),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _PaymentMethodCard extends StatelessWidget {
+  const _PaymentMethodCard({
+    required this.method,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final PaymentMethod method;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(_CheckoutTokens.cardRadius),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? _CheckoutTokens.brandBrown.withAlpha(12)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(_CheckoutTokens.cardRadius),
+          border: Border.all(
+            color: isSelected
+                ? _CheckoutTokens.brandBrown
+                : _CheckoutTokens.inputBorder,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // 付款方式圖示
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? _CheckoutTokens.brandBrown.withAlpha(24)
+                    : _CheckoutTokens.sectionHeaderBg,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                method.icon,
+                color: isSelected
+                    ? _CheckoutTokens.brandBrown
+                    : _CheckoutTokens.textSecondary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 14),
+
+            // 名稱與說明
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    method.label,
+                    style: TextStyle(
+                      color: _CheckoutTokens.textPrimary,
+                      fontSize: 14,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    method.description,
+                    style: const TextStyle(
+                      color: _CheckoutTokens.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 選中勾選圖示
+            if (isSelected)
+              const Icon(
+                Icons.check_circle,
+                color: _CheckoutTokens.brandBrown,
+                size: 20,
+              )
+            else
+              const SizedBox(width: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── 下一步按鈕（Step 1）────────────────────────────────────────────────────────
+
+class _NextStepButton extends StatelessWidget {
+  const _NextStepButton({required this.onPressed});
+
   final VoidCallback onPressed;
 
   @override
@@ -693,11 +967,10 @@ class _SubmitButton extends StatelessWidget {
       width: double.infinity,
       height: _CheckoutTokens.buttonHeight,
       child: FilledButton(
-        onPressed: isSubmitting ? null : onPressed,
+        onPressed: onPressed,
         style: FilledButton.styleFrom(
           backgroundColor: _CheckoutTokens.brandBrown,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: _CheckoutTokens.brandBrown.withAlpha(120),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_CheckoutTokens.cardRadius),
           ),
@@ -707,17 +980,90 @@ class _SubmitButton extends StatelessWidget {
             letterSpacing: 0.5,
           ),
         ),
-        child: isSubmitting
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2.5,
-                ),
-              )
-            : const Text('確認送出訂單'),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('下一步'),
+            SizedBox(width: 6),
+            Icon(Icons.arrow_forward, size: 18),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+// ── Step 2 底部按鈕列（上一步 + 確認送出）────────────────────────────────────
+
+class _StepTwoButtons extends StatelessWidget {
+  const _StepTwoButtons({
+    required this.isSubmitting,
+    required this.onBack,
+    required this.onSubmit,
+  });
+
+  final bool isSubmitting;
+  final VoidCallback onBack;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        // 上一步
+        SizedBox(
+          height: _CheckoutTokens.buttonHeight,
+          child: TextButton.icon(
+            onPressed: isSubmitting ? null : onBack,
+            icon: const Icon(Icons.arrow_back, size: 16),
+            label: const Text('上一步'),
+            style: TextButton.styleFrom(
+              foregroundColor: _CheckoutTokens.textSecondary,
+              textStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // 確認送出訂單
+        Expanded(
+          child: SizedBox(
+            height: _CheckoutTokens.buttonHeight,
+            child: FilledButton(
+              onPressed: isSubmitting ? null : onSubmit,
+              style: FilledButton.styleFrom(
+                backgroundColor: _CheckoutTokens.brandBrown,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor:
+                    _CheckoutTokens.brandBrown.withAlpha(120),
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(_CheckoutTokens.cardRadius),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : const Text('確認送出訂單'),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

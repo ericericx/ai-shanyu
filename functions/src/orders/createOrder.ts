@@ -78,6 +78,7 @@ const createOrderInputSchema = z.object({
     .min(1, "訂單至少需要一項商品")
     .max(50, "訂單商品數量上限為 50 項"), // 對應 Order 型別的設計原則
   shippingAddress: shippingAddressSchema,
+  paymentMethod: z.enum(["cod", "bankTransfer", "creditCard"]),
   note: z.string().max(500, "備註不可超過 500 字").optional(),
 });
 
@@ -247,6 +248,7 @@ export const createOrder = onCall(
           total,
           status: "pending",
           shippingAddress: input.shippingAddress,
+          paymentMethod: input.paymentMethod,
           ...(input.note ? { note: input.note } : {}),
           createdAt: now,
           updatedAt: now,
