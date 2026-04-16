@@ -70,6 +70,7 @@ jobs:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SHAYU_STAGING }}
 
       - name: Deploy Storage Rules
+        continue-on-error: true
         uses: w9jds/firebase-action@master
         with:
           args: deploy --only storage --project shayu-staging
