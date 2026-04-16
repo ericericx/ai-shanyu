@@ -109,20 +109,33 @@ class _CategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: _Tokens.gridSpacing,
-        mainAxisSpacing: _Tokens.gridSpacing,
-        mainAxisExtent: _Tokens.itemHeight,
-      ),
-      itemCount: categories.length,
-      itemBuilder: (_, i) => _CategoryItem(
-        id: categories[i].id as String,
-        name: categories[i].name as String,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 手機 <360dp 顯示 2 欄，一般顯示 3 欄，桌面寬屏顯示 4 欄
+        final int columns;
+        if (constraints.maxWidth >= 900) {
+          columns = 4;
+        } else if (constraints.maxWidth >= 360) {
+          columns = 3;
+        } else {
+          columns = 2;
+        }
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: _Tokens.gridSpacing,
+            mainAxisSpacing: _Tokens.gridSpacing,
+            mainAxisExtent: _Tokens.itemHeight,
+          ),
+          itemCount: categories.length,
+          itemBuilder: (_, i) => _CategoryItem(
+            id: categories[i].id as String,
+            name: categories[i].name as String,
+          ),
+        );
+      },
     );
   }
 }
@@ -184,22 +197,34 @@ class _SkeletonGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: _Tokens.gridSpacing,
-        mainAxisSpacing: _Tokens.gridSpacing,
-        mainAxisExtent: _Tokens.itemHeight,
-      ),
-      itemCount: 6,
-      itemBuilder: (_, __) => Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFE0E0E0),
-          borderRadius: BorderRadius.circular(_Tokens.itemBorderRadius),
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final int columns;
+        if (constraints.maxWidth >= 900) {
+          columns = 4;
+        } else if (constraints.maxWidth >= 360) {
+          columns = 3;
+        } else {
+          columns = 2;
+        }
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: _Tokens.gridSpacing,
+            mainAxisSpacing: _Tokens.gridSpacing,
+            mainAxisExtent: _Tokens.itemHeight,
+          ),
+          itemCount: 6,
+          itemBuilder: (_, __) => Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0E0E0),
+              borderRadius: BorderRadius.circular(_Tokens.itemBorderRadius),
+            ),
+          ),
+        );
+      },
     );
   }
 }

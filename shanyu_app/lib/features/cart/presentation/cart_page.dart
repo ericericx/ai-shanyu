@@ -1,5 +1,6 @@
 // lib/features/cart/presentation/cart_page.dart
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,7 +29,7 @@ abstract final class _CartTokens {
   static const checkoutButtonText = Colors.white;
   static const errorColor = Color(0xFFB71C1C);
 
-  static const pagePadding = 16.0;
+  static const pagePadding = 24.0;
   static const desktopMaxWidth = 860.0;
   static const cardRadius = 12.0;
   static const badgeRadius = 4.0;
@@ -508,10 +509,13 @@ class _ItemThumbnail extends StatelessWidget {
         width: _CartTokens.itemImageSize,
         height: _CartTokens.itemImageSize,
         child: imageUrl.isNotEmpty
-            ? Image.network(
-                imageUrl,
+            ? CachedNetworkImage(
+                imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _ImagePlaceholder(),
+                placeholder: (_, __) => Container(
+                  color: _CartTokens.sectionHeaderBg,
+                ),
+                errorWidget: (_, __, ___) => _ImagePlaceholder(),
               )
             : _ImagePlaceholder(),
       ),
@@ -676,15 +680,18 @@ class _DeleteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: '移除商品',
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(4),
-        child: const Padding(
-          padding: EdgeInsets.all(4),
-          child: Icon(
-            Icons.close,
-            size: 18,
-            color: _CartTokens.textSecondary,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(4),
+          child: const Padding(
+            padding: EdgeInsets.all(4),
+            child: Icon(
+              Icons.close,
+              size: 18,
+              color: _CartTokens.textSecondary,
+            ),
           ),
         ),
       ),
@@ -756,7 +763,7 @@ class _CheckoutSummary extends StatelessWidget {
                 formatPrice(total),
                 style: const TextStyle(
                   color: _CartTokens.brandBrown,
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.w800,
                 ),
               ),

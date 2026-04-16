@@ -158,7 +158,7 @@ class _UnreadBadge extends StatelessWidget {
       width: 8,
       height: 8,
       decoration: const BoxDecoration(
-        color: Color(0xFFE53935),
+        color: _NavBarTokens.brandRed,
         shape: BoxShape.circle,
       ),
     );
@@ -209,7 +209,7 @@ class _CartBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
       decoration: const BoxDecoration(
-        color: Color(0xFFFF5722),
+        color: _NavBarTokens.brandRed,
         borderRadius: BorderRadius.all(Radius.circular(8)),
       ),
       child: Text(

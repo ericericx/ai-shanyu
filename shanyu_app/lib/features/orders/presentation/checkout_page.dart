@@ -1,5 +1,6 @@
 // lib/features/orders/presentation/checkout_page.dart
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,7 +27,7 @@ abstract final class _CheckoutTokens {
   static const inputFocusBorder = Color(0xFFB82020);
   static const errorColor = Color(0xFFB71C1C);
 
-  static const pagePadding = 20.0;
+  static const pagePadding = 24.0;
   static const desktopMaxWidth = 760.0;
   static const cardRadius = 12.0;
   static const inputRadius = 8.0;
@@ -384,10 +385,13 @@ class _OrderSummaryItem extends StatelessWidget {
             width: _CheckoutTokens.itemImageSize,
             height: _CheckoutTokens.itemImageSize,
             child: item.imageUrl.isNotEmpty
-                ? Image.network(
-                    item.imageUrl,
+                ? CachedNetworkImage(
+                    imageUrl: item.imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const _ImagePlaceholder(),
+                    placeholder: (_, __) => Container(
+                      color: _CheckoutTokens.sectionHeaderBg,
+                    ),
+                    errorWidget: (_, __, ___) => const _ImagePlaceholder(),
                   )
                 : const _ImagePlaceholder(),
           ),
@@ -800,12 +804,23 @@ class _StepDot extends StatelessWidget {
 
     return Column(
       children: [
-        Container(
-          width: 28,
-          height: 28,
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          width: 32,
+          height: 32,
           decoration: BoxDecoration(
             color: circleColor,
             shape: BoxShape.circle,
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: _CheckoutTokens.brandBrown.withAlpha(60),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           alignment: Alignment.center,
           child: circleChild,

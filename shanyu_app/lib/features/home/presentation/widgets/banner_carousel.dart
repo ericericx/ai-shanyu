@@ -148,61 +148,67 @@ class _BannerSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: banner.linkUrl != null ? () => _handleTap(context) : null,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          CachedNetworkImage(
-            imageUrl: banner.imageUrl,
-            fit: BoxFit.cover,
-            placeholder: (_, __) => const _ImageShimmer(),
-            errorWidget: (_, __, ___) => const _BannerPlaceholder(
-              isLoading: false,
+    return MouseRegion(
+      cursor: banner.linkUrl != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: banner.linkUrl != null ? () => _handleTap(context) : null,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CachedNetworkImage(
+              imageUrl: banner.imageUrl,
+              fit: BoxFit.cover,
+              placeholder: (_, __) => const _ImageShimmer(),
+              errorWidget: (_, __, ___) => const _BannerPlaceholder(
+                isLoading: false,
+              ),
             ),
-          ),
 
-          // 底部漸層遮罩（提升指示器可讀性）
-          const Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 80,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0x55000000)],
+            // 底部漸層遮罩（提升指示器可讀性）
+            const Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 100,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Color(0x77000000)],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Banner 標題文字
-          if (banner.title != null && banner.title!.isNotEmpty)
-            Positioned(
-              bottom: 36,
-              left: 24,
-              right: 24,
-              child: Text(
-                banner.title!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  shadows: [
-                    Shadow(
-                      color: Color(0x66000000),
-                      blurRadius: 8,
-                    ),
-                  ],
+            // Banner 標題文字
+            if (banner.title != null && banner.title!.isNotEmpty)
+              Positioned(
+                bottom: 36,
+                left: 24,
+                right: 24,
+                child: Text(
+                  banner.title!,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    shadows: [
+                      Shadow(
+                        color: Color(0x88000000),
+                        blurRadius: 12,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

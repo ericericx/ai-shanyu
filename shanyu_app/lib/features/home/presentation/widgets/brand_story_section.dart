@@ -189,18 +189,21 @@ class _MobileLayout extends StatelessWidget {
             ),
             child: _SectionHeader(title: title),
           ),
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(_BrandTokens.imageRadius),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: _BrandTokens.pagePadding,
             ),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (_, __) =>
-                    Container(color: const Color(0xFFEDE5DD)),
-                errorWidget: (_, __, ___) => const _ImageFallback(),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(_BrandTokens.imageRadius),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) =>
+                      Container(color: const Color(0xFFEDE5DD)),
+                  errorWidget: (_, __, ___) => const _ImageFallback(),
+                ),
               ),
             ),
           ),

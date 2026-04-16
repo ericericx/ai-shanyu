@@ -22,8 +22,8 @@ abstract final class _ProductListTokens {
   static const preorderBadgeText = Colors.white;
   static const skeletonColor = Color(0xFFE0E0E0);
   static const cardRadius = 12.0;
-  static const pagePadding = 16.0;
-  static const cardSpacing = 12.0;
+  static const pagePadding = 24.0;
+  static const cardSpacing = 16.0;
   static const contentMaxWidth = 1200.0;
 
   // 響應式斷點
@@ -404,7 +404,7 @@ class _ProductGrid extends StatelessWidget {
               crossAxisCount: columns,
               mainAxisSpacing: _ProductListTokens.cardSpacing,
               crossAxisSpacing: _ProductListTokens.cardSpacing,
-              childAspectRatio: 0.6,
+              childAspectRatio: 0.72,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
@@ -662,7 +662,7 @@ class _ProductGridSkeleton extends StatelessWidget {
               crossAxisCount: columns,
               mainAxisSpacing: _ProductListTokens.cardSpacing,
               crossAxisSpacing: _ProductListTokens.cardSpacing,
-              childAspectRatio: 0.6,
+              childAspectRatio: 0.72,
             ),
             itemCount: 6,
             itemBuilder: (context, index) => const _SkeletonCard(),
@@ -760,13 +760,17 @@ class _ProductListEmpty extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
+          const Icon(
+            Icons.inbox_outlined,
+            size: 48,
+            color: _ProductListTokens.textSecondary,
+          ),
           const SizedBox(height: 12),
-          Text(
+          const Text(
             '此分類目前無農產',
             style: TextStyle(
               fontSize: 15,
-              color: Colors.grey[600],
+              color: _ProductListTokens.textSecondary,
             ),
           ),
         ],
@@ -790,12 +794,18 @@ class _ProductListError extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red),
+          const Icon(
+            Icons.error_outline,
+            color: Color(0xFFB71C1C),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               '載入失敗：$message',
-              style: const TextStyle(color: Colors.red, fontSize: 14),
+              style: const TextStyle(
+                color: Color(0xFFB71C1C),
+                fontSize: 14,
+              ),
             ),
           ),
         ],

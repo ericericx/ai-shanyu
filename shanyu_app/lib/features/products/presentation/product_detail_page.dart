@@ -27,7 +27,7 @@ abstract final class _DetailTokens {
   static const skeletonColor = Color(0xFFE8E0D8);
   static const disabledBg = Color(0xFFBDBDBD);
 
-  static const pagePadding = 20.0;
+  static const pagePadding = 24.0;
   static const sectionGap = 24.0;
   static const contentMaxWidth = 800.0;
 
@@ -383,7 +383,7 @@ class _MainImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 1,
+      aspectRatio: 4 / 3,
       child: imageUrl.isNotEmpty
           ? CachedNetworkImage(
               imageUrl: imageUrl,
@@ -596,8 +596,8 @@ class _VariantSelector extends StatelessWidget {
                         ? _DetailTokens.brandBrown
                         : isAvailable
                             ? _DetailTokens.divider
-                            : const Color(0xFFD7CFC8),
-                    width: isSelected ? 1.5 : 1.0,
+                            : _DetailTokens.divider,
+                    width: isSelected ? 2.0 : 1.0,
                   ),
                 ),
                 child: Column(
@@ -888,7 +888,7 @@ class _DetailSkeleton extends StatelessWidget {
       children: [
         // 主圖骨架
         AspectRatio(
-          aspectRatio: 1,
+          aspectRatio: 4 / 3,
           child: Container(color: _DetailTokens.skeletonColor),
         ),
         const SizedBox(height: 24),
