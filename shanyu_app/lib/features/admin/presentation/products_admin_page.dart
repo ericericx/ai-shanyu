@@ -1,6 +1,5 @@
 // lib/features/admin/presentation/products_admin_page.dart
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -36,7 +35,6 @@ abstract final class _Tokens {
   static const statusArchivedBg = Color(0xFFF5F5F5);
 
   static const cardBorderRadius = 8.0;
-  static const sectionPadding = EdgeInsets.all(16.0);
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -88,24 +86,37 @@ class ProductsAdminPage extends ConsumerWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
+        backgroundColor: _Tokens.surface,
         appBar: AppBar(
           title: const Text('農產管理'),
-          bottom: const TabBar(
-            tabs: [
+          backgroundColor: Colors.white,
+          foregroundColor: _Tokens.textPrimary,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          bottom: TabBar(
+            labelColor: _Tokens.brandBrown,
+            unselectedLabelColor: _Tokens.textSecondary,
+            indicatorColor: _Tokens.brandBrown,
+            indicatorWeight: 2.5,
+            labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            tabs: const [
               Tab(
-                icon: Icon(Icons.category_outlined),
+                icon: Icon(Icons.category_outlined, size: 18),
                 text: '分類管理',
               ),
               Tab(
-                icon: Icon(Icons.inventory_2_outlined),
+                icon: Icon(Icons.inventory_2_outlined, size: 18),
                 text: '農產管理',
               ),
               Tab(
-                icon: Icon(Icons.storefront_outlined),
+                icon: Icon(Icons.storefront_outlined, size: 18),
                 text: '架上管理',
               ),
               Tab(
-                icon: Icon(Icons.calendar_month_outlined),
+                icon: Icon(Icons.calendar_month_outlined, size: 18),
                 text: '時程總覽',
               ),
             ],
@@ -908,22 +919,46 @@ class _ProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 封面圖（1:1）
+          // 封面圖（4:3 比例更適合列表瀏覽）
           AspectRatio(
-            aspectRatio: 1,
+            aspectRatio: 4 / 3,
             child: product.coverImageUrl.isNotEmpty
                 ? Image.network(
                     product.coverImageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        Image.asset(
-                          'assets/images/product_placeholder.jpeg',
-                          fit: BoxFit.contain,
+                    loadingBuilder: (ctx, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        color: _Tokens.divider,
+                        child: const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
                         ),
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => Container(
+                      color: _Tokens.divider,
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported_outlined,
+                          size: 28,
+                          color: _Tokens.textSecondary,
+                        ),
+                      ),
+                    ),
                   )
-                : Image.asset(
-                    'assets/images/product_placeholder.jpeg',
-                    fit: BoxFit.contain,
+                : Container(
+                    color: _Tokens.divider,
+                    child: const Center(
+                      child: Icon(
+                        Icons.eco_outlined,
+                        size: 32,
+                        color: _Tokens.textSecondary,
+                      ),
+                    ),
                   ),
           ),
 
@@ -956,29 +991,45 @@ class _ProductCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                // 操作按鈕（垂直排列）
-                _CardActionButton(
-                  icon: Icons.tune,
-                  label: '編輯狀態',
-                  onPressed: onEditStatus,
+                // 操作按鈕（2x2 格局）
+                Row(
+                  children: [
+                    Expanded(
+                      child: _CardActionButton(
+                        icon: Icons.tune,
+                        label: '狀態',
+                        onPressed: onEditStatus,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: _CardActionButton(
+                        icon: Icons.edit_note_outlined,
+                        label: '內容',
+                        onPressed: onEditContent,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
-                _CardActionButton(
-                  icon: Icons.edit_note_outlined,
-                  label: '編輯內容',
-                  onPressed: onEditContent,
-                ),
-                const SizedBox(height: 4),
-                _CardActionButton(
-                  icon: Icons.calendar_month_outlined,
-                  label: '農產時程',
-                  onPressed: onEditSeasons,
-                ),
-                const SizedBox(height: 4),
-                _CardActionButton(
-                  icon: Icons.sell_outlined,
-                  label: '販售規格',
-                  onPressed: onEditVariants,
+                Row(
+                  children: [
+                    Expanded(
+                      child: _CardActionButton(
+                        icon: Icons.calendar_month_outlined,
+                        label: '時程',
+                        onPressed: onEditSeasons,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: _CardActionButton(
+                        icon: Icons.sell_outlined,
+                        label: '規格',
+                        onPressed: onEditVariants,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1002,38 +1053,20 @@ class _CardActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 16),
-        label: Text(label),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: _Tokens.brandBrown,
-          side: const BorderSide(color: _Tokens.divider),
-          textStyle: const TextStyle(fontSize: 13),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 14),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: _Tokens.brandBrown,
+        side: const BorderSide(color: _Tokens.divider),
+        textStyle: const TextStyle(fontSize: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+        minimumSize: const Size(0, 30),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
         ),
-      ),
-    );
-  }
-}
-
-class _PlaceholderThumb extends StatelessWidget {
-  const _PlaceholderThumb();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 64,
-      height: 64,
-      color: _Tokens.divider,
-      child: const Icon(
-        Icons.image_outlined,
-        size: 28,
-        color: _Tokens.textSecondary,
       ),
     );
   }

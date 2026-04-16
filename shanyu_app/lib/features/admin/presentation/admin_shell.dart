@@ -10,6 +10,14 @@ import '../providers/admin_providers.dart';
 const _kNavRailWidth = 220.0;
 const _kMobileBreakpoint = 600.0;
 
+// 品牌色（直接使用避免引入 token 僅為兩個常數）
+const _kBrandRed = Color(0xFFB82020);
+const _kSidebarBg = Color(0xFF2A1A14); // 深棕底色，烘托品牌紅
+const _kSidebarSelected = Color(0xFFB82020);
+const _kSidebarSelectedBg = Color(0x1FB82020); // 品牌紅 12% 透明
+const _kSidebarText = Color(0xFFEDE0D8);
+const _kSidebarTextMuted = Color(0xFF9E8880);
+
 // ── 導覽項目定義 ──────────────────────────────────────────────────────────────
 
 class _NavItem {
@@ -109,32 +117,76 @@ class _DesktopLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Scaffold(
       body: Row(
         children: [
           Container(
             width: _kNavRailWidth,
-            color: colorScheme.surfaceContainerLow,
+            color: _kSidebarBg,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    '山裕後台',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                    ),
+                // ── 品牌標頭 ──────────────────────────────────────────────
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: _kBrandRed,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            '山',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '山裕農產',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: _kSidebarText,
+                              height: 1.2,
+                            ),
+                          ),
+                          Text(
+                            '管理後台',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: _kSidebarTextMuted,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                // ── 導覽分隔 ──────────────────────────────────────────────
+                Container(
+                  height: 1,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  color: const Color(0xFF3D2A22),
+                ),
+                const SizedBox(height: 8),
+                // ── 導覽項目 ──────────────────────────────────────────────
                 Expanded(
                   child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     itemCount: _kNavItems.length,
                     itemBuilder: (context, index) {
                       final item = _kNavItems[index];
@@ -148,21 +200,30 @@ class _DesktopLayout extends StatelessWidget {
                     },
                   ),
                 ),
-                const Divider(),
-                _DesktopNavTile(
-                  item: const _NavItem(
-                    label: '返回首頁',
-                    icon: Icons.home_outlined,
-                    selectedIcon: Icons.home,
-                    path: AppRoutes.home,
-                  ),
-                  isSelected: false,
-                  onTap: () => context.go(AppRoutes.home),
+                // ── 底部返回首頁 ──────────────────────────────────────────
+                Container(
+                  height: 1,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  color: const Color(0xFF3D2A22),
                 ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: _DesktopNavTile(
+                    item: const _NavItem(
+                      label: '返回首頁',
+                      icon: Icons.home_outlined,
+                      selectedIcon: Icons.home,
+                      path: AppRoutes.home,
+                    ),
+                    isSelected: false,
+                    onTap: () => context.go(AppRoutes.home),
+                  ),
+                ),
+                const SizedBox(height: 8),
               ],
             ),
           ),
-          const VerticalDivider(width: 1),
+          const VerticalDivider(width: 1, color: Color(0xFFE0D8D4)),
           Expanded(child: navigationShell),
         ],
       ),
@@ -192,38 +253,59 @@ class _DesktopNavTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 180),
       curve: Curves.easeInOut,
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
-        color: isSelected
-            ? colorScheme.primaryContainer
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        color: isSelected ? _kSidebarSelectedBg : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: isSelected
+            ? Border.all(color: _kSidebarSelected.withValues(alpha: 0.3), width: 1)
+            : null,
       ),
-      child: ListTile(
-        leading: Icon(
-          isSelected ? item.selectedIcon : item.icon,
-          color: isSelected
-              ? colorScheme.onPrimaryContainer
-              : colorScheme.onSurfaceVariant,
-        ),
-        title: Text(
-          item.label,
-          style: TextStyle(
-            color: isSelected
-                ? colorScheme.onPrimaryContainer
-                : colorScheme.onSurfaceVariant,
-            fontWeight:
-                isSelected ? FontWeight.w600 : FontWeight.normal,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          hoverColor: Colors.white.withValues(alpha: 0.04),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                // 選中指示條
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 3,
+                  height: 18,
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    color: isSelected ? _kSidebarSelected : Colors.transparent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Icon(
+                  isSelected ? item.selectedIcon : item.icon,
+                  size: 20,
+                  color: isSelected ? _kSidebarSelected : _kSidebarTextMuted,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    item.label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isSelected ? _kSidebarText : _kSidebarTextMuted,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        onTap: onTap,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
@@ -258,21 +340,41 @@ class _MobileLayout extends StatelessWidget {
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        height: 64,
         onDestinationSelected: (index) {
           navigationShell.goBranch(
             index,
             initialLocation: index == navigationShell.currentIndex,
           );
         },
-        destinations: _kNavItems
-            .map(
-              (item) => NavigationDestination(
-                icon: Icon(item.icon),
-                selectedIcon: Icon(item.selectedIcon),
-                label: item.label,
-              ),
-            )
-            .toList(),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: '視覺',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.inventory_2_outlined),
+            selectedIcon: Icon(Icons.inventory_2),
+            label: '農產',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long),
+            label: '訂單',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.people_outline),
+            selectedIcon: Icon(Icons.people),
+            label: 'CRM',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.support_agent_outlined),
+            selectedIcon: Icon(Icons.support_agent),
+            label: '客服',
+          ),
+        ],
       ),
     );
   }

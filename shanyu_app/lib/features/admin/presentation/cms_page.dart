@@ -28,9 +28,20 @@ class CmsPage extends ConsumerWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: const Color(0xFFFAF8F5),
         appBar: AppBar(
           title: const Text('首頁視覺管理'),
+          backgroundColor: Colors.white,
+          foregroundColor: Color(0xFF2D2118),
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
           bottom: const TabBar(
+            labelColor: Color(0xFFB82020),
+            unselectedLabelColor: Color(0xFF6D4C41),
+            indicatorColor: Color(0xFFB82020),
+            indicatorWeight: 2.5,
+            labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
             tabs: [
               Tab(icon: Icon(Icons.image_outlined), text: 'Banner 管理'),
               Tab(icon: Icon(Icons.auto_stories_outlined), text: '品牌故事'),
@@ -436,32 +447,58 @@ class _BannerActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasPendingChanges = onSave != null;
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
         border: Border(
-          top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          top: BorderSide(color: Color(0xFFEFEBE9)),
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           OutlinedButton.icon(
             onPressed: isSaving ? null : onAdd,
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, size: 18),
             label: const Text('新增 Banner'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFB82020),
+              side: const BorderSide(color: Color(0xFFB82020)),
+            ),
           ),
+          const Spacer(),
+          // 有未儲存變更時顯示提示文字
+          if (hasPendingChanges && !isSaving)
+            const Padding(
+              padding: EdgeInsets.only(right: 12),
+              child: Text(
+                '有未儲存的變更',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF9E9E9E),
+                ),
+              ),
+            ),
           FilledButton.icon(
             onPressed: isSaving ? null : onSave,
             icon: isSaving
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
-                : const Icon(Icons.save_outlined),
-            label: const Text('儲存'),
+                : const Icon(Icons.save_outlined, size: 18),
+            label: Text(isSaving ? '儲存中...' : '儲存'),
+            style: FilledButton.styleFrom(
+              backgroundColor: hasPendingChanges
+                  ? const Color(0xFFB82020)
+                  : const Color(0xFF9E9E9E),
+            ),
           ),
         ],
       ),
@@ -1112,16 +1149,38 @@ class _BrandStoryTabState extends ConsumerState<_BrandStoryTab> {
                       ),
                     ],
                     const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: _isSaving || !_isDirty ? null : _save,
-                      icon: _isSaving
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.save_outlined),
-                      label: const Text('儲存品牌故事'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (!_isDirty && !_isSaving)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 12),
+                            child: Text(
+                              '已是最新版本',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF9E9E9E),
+                              ),
+                            ),
+                          ),
+                        FilledButton.icon(
+                          onPressed: _isSaving || !_isDirty ? null : _save,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFB82020),
+                          ),
+                          icon: _isSaving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.save_outlined, size: 18),
+                          label: Text(_isSaving ? '儲存中...' : '儲存品牌故事'),
+                        ),
+                      ],
                     ),
                   ],
                 ),

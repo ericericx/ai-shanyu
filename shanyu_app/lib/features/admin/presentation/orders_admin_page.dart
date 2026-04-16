@@ -170,10 +170,10 @@ class _StatusFilterBar extends ConsumerWidget {
 
     return Container(
       color: Colors.white,
-      height: 52,
+      height: 56,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         children: [
           // 「全部」chip
           _FilterChip(
@@ -276,8 +276,9 @@ class _OrderCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        hoverColor: const Color(0xFFFFF5F5),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             border: Border.all(color: _Tokens.divider),
             borderRadius: BorderRadius.circular(_Tokens.cardRadius),
@@ -529,12 +530,12 @@ class _OrderDetailDialogState extends State<_OrderDetailDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       insetPadding: isDesktop
-          ? const EdgeInsets.symmetric(horizontal: 200, vertical: 40)
+          ? const EdgeInsets.symmetric(horizontal: 80, vertical: 40)
           : const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: 600,
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
+          maxWidth: 560,
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -715,14 +716,27 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        color: _Tokens.textSecondary,
-        letterSpacing: 0.5,
-      ),
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 14,
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            color: _Tokens.brandRed,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: _Tokens.textPrimary,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -881,7 +895,7 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 44,
+            width: 52,
             child: Text(
               label,
               style: const TextStyle(

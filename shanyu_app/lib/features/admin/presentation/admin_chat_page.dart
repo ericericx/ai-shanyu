@@ -236,18 +236,57 @@ class _ChatListPanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 標頭
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: const Text(
-              '所有對話',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: _AdminChatTokens.textPrimary,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: _AdminChatTokens.divider),
               ),
             ),
+            child: Row(
+              children: [
+                const Text(
+                  '所有對話',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: _AdminChatTokens.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                // 未讀對話數可從 chatsAsync 計算，此處用 Consumer 動態顯示
+                Consumer(
+                  builder: (context, ref, _) {
+                    final chatsAsync = ref.watch(allChatsProvider);
+                    final totalUnread = chatsAsync.valueOrNull?.fold<int>(
+                          0,
+                          (sum, c) => sum + c.unreadCount,
+                        ) ??
+                        0;
+                    if (totalUnread == 0) return const SizedBox.shrink();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _AdminChatTokens.badgeBg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$totalUnread',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: _AdminChatTokens.badgeText,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-          const Divider(height: 1, color: _AdminChatTokens.divider),
 
           // 列表
           Expanded(
@@ -323,15 +362,29 @@ class _ChatListTile extends StatelessWidget {
 
     return Material(
       color: isSelected
-          ? _AdminChatTokens.brandBrown.withValues(alpha: 0.06)
+          ? _AdminChatTokens.brandBrown.withValues(alpha: 0.07)
           : Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        hoverColor: _AdminChatTokens.brandBrown.withValues(alpha: 0.04),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 左側選中指示條
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: 3,
+              height: 72,
+              color: isSelected
+                  ? _AdminChatTokens.brandBrown
+                  : Colors.transparent,
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               // 頭像
               CircleAvatar(
                 radius: 20,
@@ -397,7 +450,10 @@ class _ChatListTile extends StatelessWidget {
                 ),
               ),
             ],
-          ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

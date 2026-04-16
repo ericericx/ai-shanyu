@@ -175,26 +175,29 @@ class _OverviewGrid extends StatelessWidget {
       ),
     ];
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: isMobile
-          ? Column(
-              children: cards
-                  .map((c) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: c,
-                      ))
-                  .toList(),
-            )
-          : GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              shrinkWrap: true,
-              childAspectRatio: 2.4,
-              physics: const NeverScrollableScrollPhysics(),
-              children: cards,
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        final cardWidth = isMobile
+            ? availableWidth
+            : (availableWidth - 12 - 32) / 2; // 12 gap + 32 padding
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: cards
+                .map(
+                  (c) => SizedBox(
+                    width: cardWidth,
+                    child: c,
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      },
     );
   }
 }
@@ -223,38 +226,45 @@ class _StatCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(_CrmTokens.cardPadding),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
             // 圓形 Icon container
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: iconColor.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 20, color: iconColor),
+              child: Icon(icon, size: 22, color: iconColor),
             ),
-            const SizedBox(height: 12),
-            // 指標名稱
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: _CrmTokens.textSecondary,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            const SizedBox(height: 4),
-            // 數值
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                color: _CrmTokens.textPrimary,
+            const SizedBox(width: 14),
+            // 指標名稱 + 數值
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: _CrmTokens.textSecondary,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: _CrmTokens.textPrimary,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
