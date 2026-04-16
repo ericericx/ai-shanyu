@@ -58,7 +58,7 @@ jobs:
       - name: Deploy Cloud Functions
         uses: w9jds/firebase-action@master
         with:
-          args: deploy --only functions --project shayu-staging
+          args: deploy --only functions --project shayu-staging --force
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SHAYU_STAGING }}
 
